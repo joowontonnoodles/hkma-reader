@@ -1,33 +1,40 @@
-# HKMA Bank Disclosure Reader
+# HKMA Bank Disclosure Reader v2
 
-Upload any HKMA Key Financial Information Disclosure Statement PDF and get a clean table of key metrics with period-over-period changes.
+Extracts and compares key financial metrics from HKMA Key Financial Information Disclosure Statement PDFs.
 
 ## What it extracts
-- **Average LMR and CFR** — percentage-point change, year-over-year by quarter
-- **Total assets and total liabilities** — % change, half-year
-- **Specific, collective, and total provisions** — % change, half-year
-- **Derivative financial liabilities**
-- **Top 3 assets** and **top 3 liabilities** by concentration (as % of total)
+
+| Metric | Comparison | Change type |
+|--------|-----------|-------------|
+| Average LMR | Q4 2025 vs Q4 2024 (YoY) | Percentage points |
+| Average CFR | Q4 2025 vs Q4 2024 (YoY) | Percentage points |
+| Total assets | 31-12-2025 vs 30-06-2025 (half-year) | % change |
+| Total liabilities | 31-12-2025 vs 30-06-2025 (half-year) | % change |
+| Specific provisions (loans) | half-year | % change |
+| Collective provisions (loans) | half-year | % change |
+| Total provisions (loans) | half-year | % change |
+| Top 3 assets by concentration | current period | % of total assets |
+| Top 3 liabilities by concentration | current period | % of total liabilities |
 
 ---
 
-## How to deploy on Streamlit Community Cloud (free — nothing to install on your Mac)
+## Deploy on Streamlit Community Cloud (free — nothing to install on your Mac)
 
-### Step 1 — Put the 4 files on GitHub
-1. Go to github.com → click **New repository**
+### Step 1 — Upload files to GitHub
+1. Go to **github.com** → click **New repository**
 2. Name it `hkma-reader`, set it **Public**, click **Create repository**
-3. On the next screen click **"uploading an existing file"**
+3. Click **"uploading an existing file"**
 4. Drag in all 4 files: `app.py`, `requirements.txt`, `packages.txt`, `README.md`
 5. Click **Commit changes**
 
 ### Step 2 — Deploy
-1. Go to **share.streamlit.io**, sign in with GitHub
+1. Go to **share.streamlit.io** → sign in with GitHub
 2. Click **New app**
-3. Pick your `hkma-reader` repo
+3. Pick the `hkma-reader` repo
 4. Set **Main file path** → `app.py`
 5. Click **Deploy**
 
-Streamlit builds it automatically (~2 min). You get a live link you can open from any device.
+Builds in ~2 minutes. You get a live link, usable from any device.
 
 **No terminal. No installs. Nothing on your Mac.**
 
@@ -35,6 +42,6 @@ Streamlit builds it automatically (~2 min). You get a live link you can open fro
 
 ## Troubleshooting
 
-**"Could not find: Average LMR / CFR"** — The liquidity page is a scanned image. `packages.txt` installs Tesseract on Streamlit Cloud automatically. If it still fails, paste the error back.
+**LMR / CFR missing** — The liquidity page is a scanned image. Tesseract installs automatically via `packages.txt` on Streamlit Cloud. If it still fails, use the debug panel to see what raw text was extracted.
 
-**Numbers look off** — The app shows raw values on-screen before CSV export so you can verify. If something is wrong, it's usually a column alignment issue in that bank's specific PDF layout — easy to fix with a regex tweak.
+**A number looks wrong** — Use the "Show raw extracted text lines" debug panel at the bottom of the app to see exactly what the PDF produced. Paste the relevant lines back here and I can tighten the regex for that bank.
