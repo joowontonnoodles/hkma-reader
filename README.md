@@ -2,7 +2,7 @@
 
 Extracts and compares key financial metrics from HKMA Key Financial Information Disclosure Statement PDFs.
 
-## What it extracts
+## What it extracts 
 
 | Metric | Comparison | Change type |
 |--------|-----------|-------------|
