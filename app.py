@@ -84,7 +84,7 @@ CANONICAL = {
     r"cash and balances":                                              "Cash and balances with banks",
     r"balances with banks$":                                           "Balances with banks",
     r"balances with the monetary authority":                           "Balances with Monetary Authority",
-    r"balances due from exchange fund|due from exchange fund":         "Due from Exchange Fund",
+    r"balances due from exchange fund|due from exchange fund|amount due from exchange fund": "Due from Exchange Fund",
     r"placements with banks":                                          "Placements with banks",
     r"amounts? due from overseas offices|amount due from overseas":    "Amounts due from overseas offices",
     r"trade bills":                                                    "Trade bills",
@@ -96,8 +96,8 @@ CANONICAL = {
     r"other investments":                                              "Other investments",
     r"property.*plant.*equipment|property and equipment":             "Property, plant & equipment",
     r"deposits and balances from central banks|from central banks":    "Deposits from central banks / Monetary Authority",
-    r"deposits and balances from banks":                               "Deposits and balances from banks",
-    r"balances due to exchange fund":                                  "Balances due to Exchange Fund",
+    r"deposits and balances from banks|deposits from banks":          "Deposits and balances from banks",
+    r"balances due to exchange fund|amount due to exchange fund":      "Balances due to Exchange Fund",
     r"demand deposits and current accounts|demand deposits":           "Demand deposits and current accounts",
     r"saving deposits":                                                "Saving deposits",
     r"time.*call.*notice deposits":                                    "Time, call and notice deposits",
@@ -134,29 +134,34 @@ def trailing_nums(line):
     return [v for t in tokens for v in [clean_num(t)] if v is not None]
 
 def raw_label(line):
-    s=re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+"," ",line)
-    s=re.sub(r"(\s+[\(\-]?[\d,]+[\)]?)+\s*$","",s).strip()
-    s=re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]{3,}.*$","",s)
-    s=re.sub(r"\(see\s+part.*$","",s,flags=re.IGNORECASE).strip()
-    s=re.sub(r",?\s*net\s+of\s+impairment\s+allowance","",s,flags=re.IGNORECASE).strip()
-    s=re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ",s)
+    # Strip markdown table pipes and bold markers
+    s = re.sub(r"\|","",line)
+    s = re.sub(r"\*{1,2}","",s)
+    s = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+"," ",s)
+    s = re.sub(r"(\s+[\(\-]?[\d,]+[\)]?)+\s*$","",s).strip()
+    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]{3,}.*$","",s)
+    s = re.sub(r"\(see\s+part.*$","",s,flags=re.IGNORECASE).strip()
+    s = re.sub(r",?\s*net\s+of\s+impairment\s+allowance","",s,flags=re.IGNORECASE).strip()
+    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ",s)
     return re.sub(r"\s+"," ",s).strip()
 
+def detect_unit_per_page(page_lines):
+    """Return (unit_label, multiplier) for a specific page's lines."""
+    for line in page_lines:
+        if re.search(r"in millions|millions of hk|million[s]? of hong kong",line,re.IGNORECASE):
+            return "HKD millions",1_000_000
+        if re.search(r"HK\$\s*'?\s*0{3}",line,re.IGNORECASE): return "HKD thousands",1_000
+        if re.search(r"'000",line,re.IGNORECASE): return "HKD thousands",1_000
+    return None
+
 def detect_unit(lines):
-    def _check(subset):
-        for line in subset:
-            if re.search(r"in millions|millions of hk|million[s]? of hong kong",line,re.IGNORECASE):
-                return "HKD millions",1_000_000
-            if re.search(r"HK\$\s*'?\s*0{3}",line,re.IGNORECASE): return "HKD thousands",1_000
-            if re.search(r"'000",line,re.IGNORECASE): return "HKD thousands",1_000
-        return None
-    r=_check(lines[:150])
+    # Check first 150 lines for unit declaration
+    r = detect_unit_per_page(lines[:150])
     if r: return r
     for line in lines:
         if re.search(r"HK\$\s*'?\s*0{3}|'000",line,re.IGNORECASE): return "HKD thousands",1_000
     for line in lines:
-        if re.search(r"in millions|millions of hk|million[s]? of hong kong",line,re.IGNORECASE):
-            return "HKD millions",1_000_000
+        if re.search(r"in millions|millions of hk",line,re.IGNORECASE): return "HKD millions",1_000_000
     return "HKD thousands",1_000
 
 def fmt_n(v): return "—" if v is None else f"{abs(v):,.0f}"
@@ -180,6 +185,13 @@ def is_noise(line):
     if re.match(r"^[^a-zA-Z0-9\-\(]",s): return True
     if re.match(r"^[A-Z]\d+\s*$",s): return True
     return False
+
+# ── FIX: strip markdown/pipe chars before section matching ──
+def clean_for_match(line):
+    s = re.sub(r"\|","",line)
+    s = re.sub(r"\*{1,2}","",s)
+    s = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+"," ",s)
+    return re.sub(r"\s+"," ",s).strip()
 
 def extract_pages(pdf_bytes):
     pages=[]
@@ -206,148 +218,191 @@ def ocr_all(pdf_bytes):
 HARD_SKIP=re.compile(
     r"^total\s+(assets|liabilities)|^assets\s*$|^liabilities\s*$|^equity\s+and\s+liabilities\s*$|"
     r"^less:\s*impairment|^impairment\s+allowances\s+for|^provision\s+for\s+impaired|"
-    r"^balance\s+sheet|^section\s+[a-z]|^\d+\s*$|^page\s|^reserves?\s*$|^[-_=\s]+$",
+    r"^balance\s+sheet|^section\s+[a-z]|^\d+\s*$|^page\s|^reserves?\s*$|^[-_=\s]+$|"
+    r"^note\s+附|^figures\s+in|^unaudited|^i{1,3}\.?\s+unaudited|^international\s+claims|"
+    r"^non-bank\s+mainland|^currency\s+risk|^remuneration|^group\s+consolidated|"
+    r"^declaration\s+of\s+compliance",
     re.IGNORECASE)
 INCOME_SKIP=re.compile(
     r"profit\s+before\s+tax|profit\s+after\s+tax|net\s+profit\s*$|interest\s+income|interest\s+expense|"
     r"operating\s+income|operating\s+expense|taxation\s+charge|tax\s+expense|"
-    r"reversal\s+of\s+impairment|net\s+write\s+(back|charge)",re.IGNORECASE)
+    r"reversal\s+of\s+impairment|net\s+write\s+(back|charge)|net\s+fees|net\s+interest|"
+    r"gains\s+less\s+losses|total\s+operating",re.IGNORECASE)
 DED_SKIP=re.compile(r"^\s*[-–]\s+(collective|specific)\b",re.IGNORECASE)
+# Skip Natixis page-header lines that appear on every page
+HEADER_SKIP=re.compile(r"^natixis\s*$|^corporate\s+and\s+investment\s+banking\s*$|^groupe\s+bpce\s*$|^kpmg",re.IGNORECASE)
 
-def parse_bs(lines,section="assets"):
-    items=[]
-    in_sec=False
-    if section=="assets":
-        s_pat=re.compile(r"^assets\s*$|^assets\s+as\s+at",re.IGNORECASE)
-        e_pat=re.compile(r"total\s+assets",re.IGNORECASE)
+def parse_bs(lines, section="assets"):
+    """
+    Parse balance sheet items. Handles both plain-text and table-extracted (pipe-delimited) formats.
+    Units are assumed to be whatever detect_unit() found for the balance sheet pages.
+    """
+    items = []
+    in_sec = False
+    if section == "assets":
+        s_pat = re.compile(r"^\**assets\**\s*$|^\**assets\**\s+as\s+at", re.IGNORECASE)
+        e_pat = re.compile(r"total\s+assets|總資產", re.IGNORECASE)
     else:
-        # FIX: match both "Liabilities" and "Equity and Liabilities"
-        s_pat=re.compile(r"^liabilities\s*$|equity\s+and\s+liabilities",re.IGNORECASE)
-        e_pat=re.compile(r"total\s+liabilities",re.IGNORECASE)
+        s_pat = re.compile(r"^\**liabilities\**\s*$|equity\s+and\s+liabilities", re.IGNORECASE)
+        e_pat = re.compile(r"total\s+liabilities|總負債", re.IGNORECASE)
+
     for line in lines:
-        s=line.strip()
+        s = line.strip()
         if not s: continue
-        if s_pat.match(s): in_sec=True; continue
+        cm = clean_for_match(s)
+        if s_pat.match(cm): in_sec = True; continue
         if not in_sec: continue
-        if e_pat.search(s): in_sec=False; continue
-        if HARD_SKIP.search(s) or INCOME_SKIP.search(s) or DED_SKIP.match(s): continue
-        if is_noise(s): continue
-        nums=trailing_nums(s)
+        if e_pat.search(cm): in_sec = False; continue
+        if HARD_SKIP.search(cm) or INCOME_SKIP.search(cm) or DED_SKIP.match(cm): continue
+        if HEADER_SKIP.match(cm): continue
+        if is_noise(cm): continue
+
+        nums = trailing_nums(s)
         if not nums: continue
-        curr=nums[-2] if len(nums)>=2 else nums[-1]
-        prior=nums[-1] if len(nums)>=2 else None
-        if curr==0 and (prior is None or prior==0): continue
-        rl=raw_label(s); label=canonicalize(rl)
-        if not label or len(label)<2: continue
-        if re.match(r"^[\d,.()\-\s]+$",label): continue
-        if any(x["label"]==label for x in items): continue
-        items.append({"label":label,"curr":abs(curr),"prior":abs(prior) if prior is not None else None})
+        curr = nums[-2] if len(nums) >= 2 else nums[-1]
+        prior = nums[-1] if len(nums) >= 2 else None
+        if curr == 0 and (prior is None or prior == 0): continue
+        rl = raw_label(s); label = canonicalize(rl)
+        if not label or len(label) < 2: continue
+        if re.match(r"^[\d,.()\-\s]+$", label): continue
+        # Deduplicate
+        if any(x["label"] == label for x in items): continue
+        items.append({"label": label, "curr": abs(curr), "prior": abs(prior) if prior is not None else None})
     return items
 
-def find_two(lines,pattern):
+def find_two(lines, pattern):
     for i,line in enumerate(lines):
-        if re.search(pattern,line,re.IGNORECASE):
-            nums=trailing_nums(line)
-            if len(nums)>=2: return nums[-2],nums[-1]
-            for j in range(i+1,min(i+4,len(lines))):
-                nums+=trailing_nums(lines[j])
-                if len(nums)>=2: return nums[-2],nums[-1]
+        if re.search(pattern, line, re.IGNORECASE):
+            nums = trailing_nums(line)
+            if len(nums) >= 2: return nums[-2], nums[-1]
+            for j in range(i+1, min(i+4, len(lines))):
+                nums += trailing_nums(lines[j])
+                if len(nums) >= 2: return nums[-2], nums[-1]
     return None
 
 def get_provisions(lines):
-    spec,coll=None,None
+    spec, coll = None, None
     for line in lines:
-        ll=line.lower()
-        if re.search(r"collective\s+(impairment|provision)|[-–]\s*collective\b",ll):
-            nums=trailing_nums(line)
+        ll = line.lower()
+        if re.search(r"collective\s+(impairment|provision)|[-–]\s*collective\b|綜合減值", ll):
+            nums = trailing_nums(line)
             if nums and coll is None:
-                coll=(abs(nums[-2] if len(nums)>=2 else nums[-1]),abs(nums[-1]) if len(nums)>=2 else None)
-        if re.search(r"specific\s+(impairment|provision)|individual\s+impairment|[-–]\s*specific\b",ll):
-            nums=trailing_nums(line)
+                coll = (abs(nums[-2] if len(nums)>=2 else nums[-1]), abs(nums[-1]) if len(nums)>=2 else None)
+        if re.search(r"specific\s+(impairment|provision)|individual\s+impairment|[-–]\s*specific\b|特殊性撥備", ll):
+            nums = trailing_nums(line)
             if nums and spec is None:
-                spec=(abs(nums[-2] if len(nums)>=2 else nums[-1]),abs(nums[-1]) if len(nums)>=2 else None)
-    return {"spec":spec,"coll":coll}
+                spec = (abs(nums[-2] if len(nums)>=2 else nums[-1]), abs(nums[-1]) if len(nums)>=2 else None)
+    return {"spec": spec, "coll": coll}
 
-def get_lmr_cfr(lines,pdf_bytes):
-    lmr=find_two(lines,r"average\s+(liquidity\s+maintenance|lmr)")
-    cfr=find_two(lines,r"average\s+(core\s+funding|cfr)")
-    if not(lmr and cfr):
-        ol=ocr_all(pdf_bytes)
-        if not lmr: lmr=find_two(ol,r"average.*lmr|lmr.*%")
-        if not cfr: cfr=find_two(ol,r"average.*cfr|cfr.*%")
-    return lmr,cfr
+def get_lmr_cfr(lines, pdf_bytes):
+    lmr = find_two(lines, r"average\s+(liquidity\s+maintenance|lmr)|average\s+lmr")
+    cfr = find_two(lines, r"average\s+(core\s+funding|cfr)|average\s+cfr")
+    if not (lmr and cfr):
+        ol = ocr_all(pdf_bytes)
+        if not lmr: lmr = find_two(ol, r"average.*lmr|lmr.*%")
+        if not cfr: cfr = find_two(ol, r"average.*cfr|cfr.*%")
+    return lmr, cfr
 
 def get_entity_name(lines):
-    """Extract clean bank name — strip bracketed legal notes."""
-    for line in lines[:30]:
-        clean=re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
-        clean=re.sub(r"\(.*?\)","",clean).strip()   # remove (A public limited company...)
-        clean=re.sub(r"\s+"," ",clean).strip()
-        if re.search(r"hong kong branch",clean,re.IGNORECASE) and len(clean.split())>=3:
+    """
+    Extract the bank name from the cover page.
+    Strategy 1: find a line containing 'Hong Kong Branch' — this is always the entity name.
+    Strategy 2: scan the first 60 lines, skip known non-name headers, return first substantive name.
+    Never falls back to the filename.
+    """
+    NON_NAME = re.compile(
+        r"^(natixis\s+corporate|corporate\s+and\s+investment|groupe\s+bpce|kpmg|"
+        r"financial\s+information\s+disclosure|financial\s+statements|"
+        r"incorporated\s+in|unaudited|figures\s+in|for\s+identification|"
+        r"investment\s+banking|and\s+investment)",
+        re.IGNORECASE)
+
+    # Pass 1: explicit "Hong Kong Branch" line — most reliable signal
+    for line in lines[:60]:
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
+        clean = re.sub(r"\(.*?\)", "", clean).strip()   # drop legal brackets
+        clean = re.sub(r"\s+", " ", clean).strip()
+        if re.search(r"hong\s+kong\s+branch", clean, re.IGNORECASE):
+            # Must have at least one word before "Hong Kong Branch"
+            before = re.sub(r"hong\s+kong\s+branch.*$", "", clean, flags=re.IGNORECASE).strip()
+            if len(before.split()) >= 1:
+                return clean[:100]
+
+    # Pass 2: first substantive capitalized line on the cover
+    for line in lines[:20]:
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
+        clean = re.sub(r"\(.*?\)", "", clean).strip()
+        clean = re.sub(r"\s+", " ", clean).strip()
+        if not clean or len(clean) < 4: continue
+        if re.match(r"^[\d\s\-/]+$", clean): continue
+        if NON_NAME.match(clean): continue
+        # Must look like a proper name (has letters, not all lowercase prose)
+        if len(clean.split()) >= 1 and clean[0].isupper():
             return clean[:100]
-    for line in lines[:10]:
-        clean=re.sub(r"[\u4e00-\u9fff]+","",line).strip()
-        if len(clean)>8 and not re.match(r"^[\d\s\-/]+$",clean):
-            return clean[:100]
-    return ""
+    return "Unknown Bank"
 
 def get_branch_description(lines):
-    """Extract 'Branch activities' paragraph — most reliable description source."""
-    in_para=False
-    para_lines=[]
-    section_headers=re.compile(
+    """Extract 'Branch activities' or compliance-declaration paragraph."""
+    in_para = False; para_lines = []
+    section_headers = re.compile(
         r"^(additional\s+profit|profit\s+and\s+loss|balance\s+sheet|off-balance|"
-        r"supplementary|section\s+[a-z]|contents|for\s+the\s+(year|half)|remuneration)",
+        r"supplementary|section\s+[a-z]|contents|for\s+the\s+(year|half)|remuneration|"
+        r"liquidity|currency\s+risk|international\s+claims|mainland|group\s+consolidated)",
         re.IGNORECASE)
     for line in lines:
-        clean=re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
-        clean=re.sub(r"[^a-zA-Z0-9\s,&\.\-/()\!:@'\"]+"," ",clean).strip()
-        clean=re.sub(r"\s+"," ",clean).strip()
-        if re.search(r"branch activities|branch information",clean,re.IGNORECASE):
-            in_para=True; continue
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
+        clean = re.sub(r"[^a-zA-Z0-9\s,&\.\-/()\!:@'\"]+" , " ", clean).strip()
+        clean = re.sub(r"\s+", " ", clean).strip()
+        if re.search(r"branch activities|branch information", clean, re.IGNORECASE):
+            in_para = True; continue
         if in_para:
-            if not clean or len(clean)<5: continue
-            if section_headers.match(clean) or re.match(r"^[-_=]+$",clean): break
-            if re.match(r"^[\d\s]+$",clean): continue
+            if not clean or len(clean) < 5: continue
+            if section_headers.match(clean) or re.match(r"^[-_=]+$", clean): break
+            if re.match(r"^[\d\s]+$", clean): continue
             para_lines.append(clean)
-            if len(" ".join(para_lines))>350: break
-    desc=" ".join(para_lines)
+            if len(" ".join(para_lines)) > 350: break
+    desc = " ".join(para_lines)
+    # Fallback: use compliance declaration paragraph for entity description
     if not desc:
-        for line in lines:
-            clean=re.sub(r"[\u4e00-\u9fff]+","",line).strip()
-            if re.search(r"incorporated in|registered under|a branch of",clean,re.IGNORECASE) and len(clean.split())>8:
-                desc=clean; break
-    if len(desc)>350: desc=desc[:350].rsplit(" ",1)[0]+"…"
+        for i, line in enumerate(lines):
+            clean = re.sub(r"[\u4e00-\u9fff]+", "", line).strip()
+            if re.search(r"we have pleasure in presenting|incorporated in|registered under|a branch of", clean, re.IGNORECASE) and len(clean.split()) > 8:
+                desc = clean; break
+    if len(desc) > 350: desc = desc[:350].rsplit(" ", 1)[0] + "…"
     return desc
 
 def get_period(lines):
     for line in lines:
-        clean=re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
-        if re.search(r"(year|period|half.year)\s+ended|for the year|as at",clean,re.IGNORECASE):
-            if re.search(r"\d{4}",clean):
-                return re.sub(r"\s+"," ",clean).strip()[:80]
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
+        if re.search(r"(year|period|half.year)\s+ended|for the year|as at|as of", clean, re.IGNORECASE):
+            if re.search(r"\d{4}", clean):
+                return re.sub(r"\s+", " ", clean).strip()[:80]
     return ""
 
 def run(pdf_bytes):
-    pages=extract_pages(pdf_bytes)
-    all_lines=[]
-    for _,lines,_ in pages: all_lines+=lines
-    ul,mult=detect_unit(all_lines)
-    ta=find_two(all_lines,r"total\s+assets|總資產")
-    tl=find_two(all_lines,r"total\s+liabilities|總負債")
-    # FIX: include "net profit" for banks like SocGen
-    profit=find_two(all_lines,r"profit\s+after\s+tax|net\s+profit\s*$|餘稅後盈利")
-    prov=get_provisions(all_lines)
-    lmr,cfr=get_lmr_cfr(all_lines,pdf_bytes)
-    ai=parse_bs(all_lines,"assets")
-    li=parse_bs(all_lines,"liabilities")
-    entity=get_entity_name(all_lines)
-    desc=get_branch_description(all_lines)
-    period=get_period(all_lines)
-    return {"unit_label":ul,"multiplier":mult,"ta":ta,"tl":tl,"profit":profit,
-            "spec":prov["spec"],"coll":prov["coll"],"lmr":lmr,"cfr":cfr,
-            "asset_items":ai,"liab_items":li,"entity":entity,"desc":desc,
-            "period":period,"raw_lines":all_lines}
+    pages = extract_pages(pdf_bytes)
+    all_lines = []
+    for _, lines, _ in pages: all_lines += lines
+
+    # Detect unit from balance sheet pages (pages 1-5 typically) — avoid mixed-unit later pages
+    bs_lines = []
+    for _, lines, _ in pages[:6]: bs_lines += lines
+    ul, mult = detect_unit(bs_lines)
+
+    ta     = find_two(all_lines, r"total\s+assets|總資產")
+    tl     = find_two(all_lines, r"total\s+liabilities|總負債")
+    profit = find_two(all_lines, r"profit\s+after\s+tax(?:ation)?|net\s+profit\s*$|除稅後溢利")
+    prov   = get_provisions(all_lines)
+    lmr, cfr = get_lmr_cfr(all_lines, pdf_bytes)
+    ai = parse_bs(all_lines, "assets")
+    li = parse_bs(all_lines, "liabilities")
+    entity  = get_entity_name(all_lines)
+    desc    = get_branch_description(all_lines)
+    period  = get_period(all_lines)
+    return {"unit_label": ul, "multiplier": mult, "ta": ta, "tl": tl, "profit": profit,
+            "spec": prov["spec"], "coll": prov["coll"], "lmr": lmr, "cfr": cfr,
+            "asset_items": ai, "liab_items": li, "entity": entity, "desc": desc,
+            "period": period, "raw_lines": all_lines}
 
 def dir_word(c,p):
     if c is None or p is None: return "changed"
@@ -399,10 +454,10 @@ def generate_report_html(d,filename,ul,mult):
     cfr_text=(f"The CFR {dir_word(cfr[0],cfr[1])} from {cfr[1]:.2f}% to {cfr[0]:.2f}%, a change of "
               f"{'+'if cfr_pp and cfr_pp>0 else ''}{cfr_pp:.2f}pp. "
               f"Stable funding sources adequately cover required stable funding needs. "
-              f"The CFR remains well above the regulatory minimum of 75%.") if cfr else "CFR data not found."
-    liq_min=round(min(lmr[0],cfr[0]),0) if lmr and cfr else None
-    liq_s=(f"In terms of liquidity, {sn} is above regulatory requirements for both ratios. "
-           f"The lower of the two ratios stands at {liq_min:.0f}%, demonstrating a strong liquidity buffer.") if liq_min else ""
+              f"The CFR remains well above the regulatory minimum of 75%.") if cfr else "CFR not disclosed by this institution."
+    liq_min=round(min(lmr[0],cfr[0]),0) if lmr and cfr else (lmr[0] if lmr else None)
+    liq_s=(f"In terms of liquidity, {sn} is above regulatory requirements. "
+           f"The LMR stands at {liq_min:.0f}%, demonstrating a strong liquidity buffer.") if liq_min else ""
 
     def kfr(label,pair):
         if not pair: return f'<tr><td>{label}</td><td class="num muted">—</td><td class="num muted">—</td><td class="num muted">—</td></tr>'
@@ -521,7 +576,7 @@ if not uploaded:
     st.markdown("""
     <div style="margin-top:40px;padding:40px;border:1px dashed #ddd;text-align:center;background:#fafafa">
       <div style="font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#ccc;margin-bottom:6px;">Drop a disclosure PDF to begin</div>
-      <div style="font-size:.7rem;color:#ddd;">Supports any HKMA-format bank — JPMorgan, CA-CIB, Société Générale, BNP Paribas, etc.</div>
+      <div style="font-size:.7rem;color:#ddd;">Supports JPMorgan, CA-CIB, Société Générale, Natixis, BNP Paribas, and other HKMA-format disclosures</div>
     </div>""",unsafe_allow_html=True)
 
 if uploaded:
@@ -653,3 +708,5 @@ if uploaded:
     st.markdown('<div style="font-size:.68rem;color:#aaa;margin-top:8px;"><b>PDF:</b> open HTML in browser → Print → Save as PDF</div>',unsafe_allow_html=True)
     with st.expander("Debug — raw extracted lines"):
         st.text("\n".join(d["raw_lines"][:300]))
+
+
