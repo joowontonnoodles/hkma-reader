@@ -11,16 +11,12 @@ except ImportError:
     OCR_AVAILABLE = False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CSS — White / Black / Red / Gray only. DM Sans font (closest free to Asta Sans).
-# ZERO black backgrounds.
+# CSS — White / Black / Red / Gray only. DM Sans. Zero black backgrounds.
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
-/* ─ global reset ─ */
 *, *::before, *::after { box-sizing: border-box; }
-
 html, body,
 [data-testid="stAppViewContainer"],
 [data-testid="stHeader"],
@@ -33,197 +29,86 @@ html, body,
     background-color: #ffffff !important;
     color: #111111 !important;
 }
-
-.block-container {
-    max-width: 860px !important;
-    padding: 2.5rem 2rem 5rem !important;
-}
-
-/* ─ headings ─ */
+.stApp, [data-testid="stAppViewContainer"] { background: #ffffff !important; }
+.block-container { max-width: 860px !important; padding: 2.5rem 2rem 5rem !important; }
+p, span, div, li { color: #111111 !important; }
 h1 {
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.72rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
+    font-size: 0.72rem !important; font-weight: 700 !important;
+    letter-spacing: 0.18em !important; text-transform: uppercase !important;
     color: #E60028 !important;
     border-bottom: 1.5px solid #E60028 !important;
-    padding-bottom: 10px !important;
-    margin-bottom: 4px !important;
+    padding-bottom: 10px !important; margin-bottom: 4px !important;
 }
 h2 {
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.65rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
+    font-size: 0.65rem !important; font-weight: 600 !important;
+    letter-spacing: 0.18em !important; text-transform: uppercase !important;
     color: #555555 !important;
-    border-bottom: 1px solid #e8e8e8 !important;
+    border-bottom: 1px solid #eeeeee !important;
     padding-bottom: 5px !important;
-    margin-top: 36px !important;
-    margin-bottom: 10px !important;
+    margin-top: 36px !important; margin-bottom: 10px !important;
 }
 h3 {
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.63rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.14em !important;
-    text-transform: uppercase !important;
+    font-size: 0.63rem !important; font-weight: 600 !important;
+    letter-spacing: 0.14em !important; text-transform: uppercase !important;
     color: #888888 !important;
-    margin-top: 22px !important;
-    margin-bottom: 8px !important;
+    margin-top: 22px !important; margin-bottom: 8px !important;
 }
-p, span, div, li { color: #111111 !important; }
-
-/* ─ page header ─ */
 .pg-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    border-bottom: 2px solid #111111;
-    padding-bottom: 12px;
-    margin-bottom: 4px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 2px solid #111111; padding-bottom: 12px; margin-bottom: 4px;
 }
-.pg-bank {
-    font-size: 1.45rem;
-    font-weight: 700;
-    color: #111111 !important;
-    letter-spacing: -0.01em;
-    line-height: 1;
-}
-.pg-bank span { color: #E60028 !important; }
-.pg-meta {
-    font-size: 0.68rem;
-    color: #999999 !important;
-    text-align: right;
-    line-height: 1.7;
-}
+.pg-bank { font-size: 1.45rem; font-weight: 700; color: #111111 !important; letter-spacing: -0.01em; line-height: 1; }
+.pg-meta { font-size: 0.68rem; color: #999999 !important; text-align: right; line-height: 1.7; }
 .unit-tag {
-    display: inline-block;
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #E60028 !important;
-    border: 1px solid #E60028;
-    padding: 2px 8px;
-    margin: 10px 0 20px 0;
+    display: inline-block; font-size: 0.62rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: #E60028 !important; border: 1px solid #E60028;
+    padding: 2px 8px; margin: 10px 0 20px 0;
 }
-
-/* ─ description block ─ */
 .desc-block {
-    border-left: 3px solid #E60028;
-    padding: 10px 14px;
-    background: #f9f9f9 !important;
-    margin-bottom: 28px;
+    border-left: 3px solid #E60028; padding: 10px 14px;
+    background: #fafafa !important; margin-bottom: 28px;
 }
-.desc-text {
-    font-size: 0.78rem;
-    color: #444444 !important;
-    line-height: 1.65;
-}
-
-/* ─ snapshot KPI strip ─ */
+.desc-text { font-size: 0.78rem; color: #444444 !important; line-height: 1.65; }
 .snapshot {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1px;
-    background: #e8e8e8;
-    border: 1px solid #e8e8e8;
-    margin-bottom: 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px; background: #e8e8e8; border: 1px solid #e8e8e8; margin-bottom: 32px;
 }
-.kpi {
-    background: #ffffff !important;
-    padding: 14px 16px;
-}
+.kpi { background: #ffffff !important; padding: 14px 16px; }
 .kpi-label {
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999 !important;
-    margin-bottom: 6px;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #999999 !important; margin-bottom: 6px;
 }
-.kpi-val {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #111111 !important;
-    line-height: 1;
-}
-.kpi-chg-pos {
-    font-size: 0.65rem;
-    color: #1a7a3a !important;
-    margin-top: 4px;
-}
-.kpi-chg-neg {
-    font-size: 0.65rem;
-    color: #E60028 !important;
-    margin-top: 4px;
-}
-.kpi-unit {
-    font-size: 0.58rem;
-    color: #bbbbbb !important;
-    margin-top: 2px;
-}
-
-/* ─ ratio cards ─ */
-.ratio-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 12px 0 28px;
-}
+.kpi-val { font-size: 1.05rem; font-weight: 700; color: #111111 !important; line-height: 1; }
+.kpi-chg-pos { font-size: 0.65rem; color: #1a7a3a !important; margin-top: 4px; }
+.kpi-chg-neg { font-size: 0.65rem; color: #E60028 !important; margin-top: 4px; }
+.ratio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 28px; }
 .ratio-card {
-    border: 1px solid #e8e8e8;
-    border-top: 2.5px solid #E60028;
-    padding: 16px 18px;
-    background: #ffffff !important;
+    border: 1px solid #e8e8e8; border-top: 2.5px solid #E60028;
+    padding: 16px 18px; background: #ffffff !important;
 }
 .ratio-label {
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #aaaaaa !important;
-    margin-bottom: 10px;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #aaaaaa !important; margin-bottom: 10px;
 }
-.ratio-main {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #111111 !important;
-    line-height: 1;
-}
+.ratio-main { font-size: 1.6rem; font-weight: 700; color: #111111 !important; line-height: 1; }
 .ratio-prior { font-size: 0.72rem; color: #cccccc !important; margin-left: 6px; }
 .chg-pos { font-size: 0.68rem; font-weight: 600; color: #1a7a3a !important; }
 .chg-neg { font-size: 0.68rem; font-weight: 600; color: #E60028 !important; }
-
-/* ─ tables ─ */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.77rem;
-    margin: 6px 0 20px;
-    background: #ffffff !important;
-}
+table { width: 100%; border-collapse: collapse; font-size: 0.77rem; margin: 6px 0 20px; background: #ffffff !important; }
 thead tr { border-bottom: 2px solid #111111; }
 th {
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #999999 !important;
-    background: #ffffff !important;
-    padding: 0 12px 8px;
-    text-align: right;
-    white-space: nowrap;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #999999 !important; background: #ffffff !important;
+    padding: 0 12px 8px; text-align: right; white-space: nowrap;
 }
 th:first-child { text-align: left; }
 td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #f2f2f2;
-    color: #222222 !important;
-    text-align: right;
-    background: #ffffff !important;
+    padding: 8px 12px; border-bottom: 1px solid #f2f2f2;
+    color: #222222 !important; text-align: right; background: #ffffff !important;
 }
 td:first-child { text-align: left; font-weight: 500; color: #111111 !important; }
 tr:last-child td { border-bottom: none; }
@@ -231,56 +116,23 @@ tr:hover td { background: #fef5f5 !important; }
 .pos { color: #1a7a3a !important; font-weight: 600; }
 .neg { color: #E60028 !important; font-weight: 600; }
 .muted { color: #bbbbbb !important; }
-
-/* ─ rank badge ─ */
 .rank {
-    display: inline-block;
-    width: 18px; height: 18px;
-    line-height: 18px;
-    text-align: center;
-    font-size: 0.6rem;
-    font-weight: 700;
-    color: #E60028 !important;
-    border: 1px solid #E60028;
-    margin-right: 8px;
-    vertical-align: middle;
+    display: inline-block; width: 18px; height: 18px; line-height: 18px;
+    text-align: center; font-size: 0.6rem; font-weight: 700;
+    color: #E60028 !important; border: 1px solid #E60028;
+    margin-right: 8px; vertical-align: middle;
 }
-
-/* ─ divider ─ */
 .rule { border: none; border-top: 1px solid #e8e8e8; margin: 32px 0 0; }
-
-/* ─ upload area ─ */
-[data-testid="stFileUploader"] {
-    border: 1px dashed #dddddd !important;
-    background: #fafafa !important;
-    padding: 6px !important;
-}
-
-/* ─ download button ─ */
+[data-testid="stFileUploader"] { border: 1px dashed #dddddd !important; background: #fafafa !important; padding: 6px !important; }
 [data-testid="stDownloadButton"] > button {
-    background: #ffffff !important;
-    border: 1.5px solid #111111 !important;
-    color: #111111 !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.68rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    padding: 8px 20px !important;
-    border-radius: 0 !important;
-    transition: all 0.15s;
+    background: #ffffff !important; border: 1.5px solid #111111 !important;
+    color: #111111 !important; font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.68rem !important; font-weight: 600 !important;
+    letter-spacing: 0.1em !important; text-transform: uppercase !important;
+    padding: 8px 20px !important; border-radius: 0 !important;
 }
-[data-testid="stDownloadButton"] > button:hover {
-    background: #E60028 !important;
-    border-color: #E60028 !important;
-    color: #ffffff !important;
-}
-
-/* ─ expander ─ */
-[data-testid="stExpander"] {
-    border: 1px solid #eeeeee !important;
-    background: #fafafa !important;
-}
+[data-testid="stDownloadButton"] > button:hover { background: #E60028 !important; border-color: #E60028 !important; color: #ffffff !important; }
+[data-testid="stExpander"] { border: 1px solid #eeeeee !important; background: #fafafa !important; }
 details summary { color: #cccccc !important; font-size: 0.68rem !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -351,18 +203,40 @@ def raw_label(line):
     s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ", s)
     return re.sub(r"\s+"," ", s).strip()
 
-def detect_unit(text):
-    """Returns ('millions', 1_000_000) or ('thousands', 1_000)."""
-    if re.search(r"in millions|millions of hk|million[s]? of hong kong", text, re.IGNORECASE):
-        return "HKD millions", 1_000_000
-    if re.search(r"HK\$\s*'?\s*0{3}", text, re.IGNORECASE):
-        return "HKD thousands", 1_000
-    if re.search(r"'000|thousands", text, re.IGNORECASE):
-        return "HKD thousands", 1_000
+def detect_unit(lines):
+    """
+    Scan the first 150 lines (Section A always appears first in HKMA disclosures).
+    This prevents later capital/risk sections that use 'millions' from overriding
+    the Section A unit declaration.
+    Falls back to full doc scan if not found early, giving thousands priority.
+    """
+    def _check(subset):
+        for line in subset:
+            if re.search(r"in millions|millions of hk|million[s]? of hong kong",
+                         line, re.IGNORECASE):
+                return "HKD millions", 1_000_000
+            if re.search(r"HK\$\s*'?\s*0{3}", line, re.IGNORECASE):
+                return "HKD thousands", 1_000
+            if re.search(r"'000", line, re.IGNORECASE):
+                return "HKD thousands", 1_000
+        return None
+
+    result = _check(lines[:150])
+    if result:
+        return result
+    # Full doc fallback — '000 / thousands takes priority over millions
+    full = lines
+    for line in full:
+        if re.search(r"HK\$\s*'?\s*0{3}|'000", line, re.IGNORECASE):
+            return "HKD thousands", 1_000
+    for line in full:
+        if re.search(r"in millions|millions of hk|million[s]? of hong kong",
+                     line, re.IGNORECASE):
+            return "HKD millions", 1_000_000
     return "HKD thousands", 1_000   # safe default
 
 def fmt_snapshot(v, multiplier):
-    """Convert raw doc value → actual HKD → human-readable B/M."""
+    """Raw doc value → actual HKD → human-readable string."""
     if v is None: return "—"
     hkd = abs(v) * multiplier
     if hkd >= 1_000_000_000_000: return f"{hkd/1_000_000_000_000:.2f}T"
@@ -511,21 +385,17 @@ def get_lmr_cfr(lines, pdf_bytes):
     return lmr, cfr
 
 def get_description(lines):
-    """Extract entity name and a 1-2 sentence description from early pages."""
     entity, desc_parts = None, []
-    in_desc = False
     for line in lines:
         ll = line.lower()
         clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
         clean = re.sub(r"[^a-zA-Z0-9\s,&\.\-/()\!:@']+"," ",clean).strip()
         clean = re.sub(r"\s+"," ",clean).strip()
         if not clean or len(clean)<8: continue
-        # Entity name: look for "X Hong Kong Branch" style
         if not entity and re.search(r"hong kong branch", ll) and len(clean)>15:
             candidate = re.sub(r"\s+"," ",clean).strip()
             if len(candidate.split())>=3:
                 entity = candidate[:120]
-        # Description: full English sentences about the institution
         if re.search(r"organized under|incorporated in|share capital|liability company|registered office", ll):
             if len(clean.split())>=8:
                 desc_parts.append(clean)
@@ -543,14 +413,13 @@ def get_period(lines):
     return ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MAIN EXTRACTION
+# MAIN
 # ─────────────────────────────────────────────────────────────────────────────
 def run(pdf_bytes):
     pages = extract_pages(pdf_bytes)
     all_lines=[]
     for _,lines,_ in pages: all_lines+=lines
-    full_text = "\n".join(all_lines)
-    unit_label, multiplier = detect_unit(full_text)
+    unit_label, multiplier = detect_unit(all_lines)   # pass lines, not full text
     ta     = find_two(all_lines, r"total\s+assets|總資產")
     tl     = find_two(all_lines, r"total\s+liabilities|總負債")
     profit = find_two(all_lines, r"profit\s+after\s+tax|餘稅後盈利")
@@ -612,32 +481,26 @@ if uploaded:
     elif coll: tot_prov = coll
     elif spec: tot_prov = spec
 
-    # ── Page header ────────────────────────────────────────────────────────
+    # ── Page header ─────────────────────────────────────────────────────────
     st.markdown(f"""
     <div class="pg-header">
       <div class="pg-bank">{entity}</div>
       <div class="pg-meta">HKMA Key Financial Disclosure<br><span>{period}</span></div>
     </div>
-    <div class="unit-tag">Figures reported in {ul}</div>
+    <div class="unit-tag">Reported in {ul} &nbsp;·&nbsp; Snapshot figures in HKD billions</div>
     """, unsafe_allow_html=True)
 
-    # ── Description ────────────────────────────────────────────────────────
+    # ── Description ──────────────────────────────────────────────────────────
     if desc:
-        st.markdown(f"""
-        <div class="desc-block">
-          <div class="desc-text">{desc}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="desc-block"><div class="desc-text">{desc}</div></div>',
+                    unsafe_allow_html=True)
 
-    # ── Snapshot KPIs ──────────────────────────────────────────────────────
+    # ── Snapshot KPIs ────────────────────────────────────────────────────────
     def kpi_block(label, raw_val, raw_prior, is_ratio=False):
         if raw_val is None: return ""
         display = f"{raw_val:.2f}%" if is_ratio else f"HKD {fmt_snapshot(raw_val, mult)}"
         if raw_prior is not None:
-            if is_ratio:
-                chg = round(raw_val - raw_prior, 2)
-            else:
-                chg = pct_chg(raw_val, raw_prior)
+            chg = round(raw_val - raw_prior, 2) if is_ratio else pct_chg(raw_val, raw_prior)
             if chg is not None:
                 sign = "+" if chg>0 else ""
                 sfx  = "pp" if is_ratio else "%"
@@ -647,11 +510,7 @@ if uploaded:
                 chg_html = ""
         else:
             chg_html = ""
-        return f"""<div class="kpi">
-          <div class="kpi-label">{label}</div>
-          <div class="kpi-val">{display}</div>
-          {chg_html}
-        </div>"""
+        return f'<div class="kpi"><div class="kpi-label">{label}</div><div class="kpi-val">{display}</div>{chg_html}</div>'
 
     kpis = ""
     if ta:        kpis += kpi_block("Total Assets",      ta[0],        ta[1])
@@ -659,11 +518,10 @@ if uploaded:
     if lmr:       kpis += kpi_block("Avg LMR",           lmr[0],       lmr[1],  is_ratio=True)
     if cfr:       kpis += kpi_block("Avg CFR",           cfr[0],       cfr[1],  is_ratio=True)
     if tot_prov:  kpis += kpi_block("Total Provisions",  tot_prov[0],  tot_prov[1])
-
     if kpis:
         st.markdown(f'<div class="snapshot">{kpis}</div>', unsafe_allow_html=True)
 
-    # ── Liquidity ──────────────────────────────────────────────────────────
+    # ── Liquidity ────────────────────────────────────────────────────────────
     st.markdown("<h2>Liquidity</h2>", unsafe_allow_html=True)
     lpp = round(lmr[0]-lmr[1],2) if lmr else None
     cpp = round(cfr[0]-cfr[1],2) if cfr else None
@@ -671,24 +529,20 @@ if uploaded:
     <div class="ratio-grid">
       <div class="ratio-card">
         <div class="ratio-label">3-Month Average LMR</div>
-        <div>
-          <span class="ratio-main">{f"{lmr[0]:.2f}%" if lmr else "—"}</span>
-          <span class="ratio-prior">{f"prev {lmr[1]:.2f}%" if lmr else ""}</span>
-        </div>
+        <div><span class="ratio-main">{f"{lmr[0]:.2f}%" if lmr else "—"}</span>
+        <span class="ratio-prior">{f"prev {lmr[1]:.2f}%" if lmr else ""}</span></div>
         <div style="margin-top:6px">{pp_html(lpp)}</div>
       </div>
       <div class="ratio-card">
         <div class="ratio-label">3-Month Average CFR</div>
-        <div>
-          <span class="ratio-main">{f"{cfr[0]:.2f}%" if cfr else "—"}</span>
-          <span class="ratio-prior">{f"prev {cfr[1]:.2f}%" if cfr else ""}</span>
-        </div>
+        <div><span class="ratio-main">{f"{cfr[0]:.2f}%" if cfr else "—"}</span>
+        <span class="ratio-prior">{f"prev {cfr[1]:.2f}%" if cfr else ""}</span></div>
         <div style="margin-top:6px">{pp_html(cpp)}</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Key financials ─────────────────────────────────────────────────────
+    # ── Key financials ───────────────────────────────────────────────────────
     st.markdown("<h2>Key Financials</h2>", unsafe_allow_html=True)
     kf_rows = [
         ("Profit after taxation", prof),
@@ -709,10 +563,9 @@ if uploaded:
     <table>
       <thead><tr><th>Metric</th><th>Current ({ul})</th><th>Prior ({ul})</th><th>Change</th></tr></thead>
       <tbody>{rows_html}</tbody>
-    </table>
-    """, unsafe_allow_html=True)
+    </table>""", unsafe_allow_html=True)
 
-    # ── Concentration top 3 ────────────────────────────────────────────────
+    # ── Top 3 Concentration ──────────────────────────────────────────────────
     def render_top3(items, total_pair, title):
         if not items or not total_pair: return
         tc, tp = total_pair[0], total_pair[1] if total_pair[1] else None
@@ -738,13 +591,12 @@ if uploaded:
             <th>Prior %</th><th>Prior ({ul})</th>
           </tr></thead>
           <tbody>{rows_h}</tbody>
-        </table>
-        """, unsafe_allow_html=True)
+        </table>""", unsafe_allow_html=True)
 
     render_top3(ai, ta, "Asset Concentration")
     render_top3(li, tl, "Liability Concentration")
 
-    # ── Full breakdown ─────────────────────────────────────────────────────
+    # ── Full breakdown ───────────────────────────────────────────────────────
     st.markdown('<hr class="rule">', unsafe_allow_html=True)
     st.markdown("<h2>Full Balance Sheet Breakdown</h2>", unsafe_allow_html=True)
 
@@ -773,13 +625,12 @@ if uploaded:
             <th>Prior ({ul})</th><th>% of Total (Prior)</th>
           </tr></thead>
           <tbody>{rows_h}</tbody>
-        </table>
-        """, unsafe_allow_html=True)
+        </table>""", unsafe_allow_html=True)
 
     render_full(ai, ta, "Assets")
     render_full(li, tl, "Liabilities")
 
-    # ── Export ─────────────────────────────────────────────────────────────
+    # ── Export ───────────────────────────────────────────────────────────────
     st.markdown('<hr class="rule">', unsafe_allow_html=True)
     export=[]
     for label,pair in kf_rows:
