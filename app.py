@@ -11,74 +11,50 @@ try:
 except ImportError:
     OCR_AVAILABLE = False
 
-# ── CSS: SocGen black/white/red, no emojis ────────────────────────────────────
+# ── SocGen CSS ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-    background-color: #0a0a0a;
-    color: #f0f0f0;
-}
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #f0f0f0; }
 .stApp { background-color: #0a0a0a; }
-
-h1 { color: #E60028; font-weight: 600; font-size: 1.4rem; letter-spacing: 0.04em; border-bottom: 2px solid #E60028; padding-bottom: 8px; margin-bottom: 4px; }
-h2, h3 { color: #f0f0f0; font-weight: 500; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 28px; margin-bottom: 6px; }
-
-/* Header bar */
+h1 { color: #E60028; font-weight: 600; font-size: 1.35rem; letter-spacing: 0.04em;
+     border-bottom: 2px solid #E60028; padding-bottom: 8px; margin-bottom: 4px; }
+h2, h3 { color: #f0f0f0; font-weight: 500; font-size: 0.82rem; letter-spacing: 0.1em;
+          text-transform: uppercase; margin-top: 28px; margin-bottom: 6px; }
 .header-bar { display: flex; justify-content: space-between; align-items: baseline;
-    border-bottom: 1px solid #333; padding-bottom: 6px; margin-bottom: 20px; }
-.bank-name { color: #E60028; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.05em; }
-.header-meta { color: #888; font-size: 0.78rem; }
-
-/* Ratio cards */
-.ratio-row { display: flex; gap: 20px; margin: 12px 0 24px 0; }
-.ratio-card { flex: 1; background: #141414; border: 1px solid #222; border-left: 3px solid #E60028;
-    padding: 14px 18px; }
-.ratio-label { color: #888; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-.ratio-vals { display: flex; gap: 20px; align-items: baseline; }
-.ratio-curr { color: #f0f0f0; font-size: 1.3rem; font-weight: 500; }
-.ratio-prior { color: #555; font-size: 0.9rem; }
-.ratio-change-pos { color: #4caf50; font-size: 0.82rem; }
-.ratio-change-neg { color: #E60028; font-size: 0.82rem; }
-
-/* Main table */
-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 8px 0 20px 0; }
-th { background: #141414; color: #888; font-weight: 500; text-transform: uppercase;
-    letter-spacing: 0.07em; font-size: 0.7rem; padding: 8px 12px; border-bottom: 1px solid #2a2a2a; text-align: right; }
+    border-bottom: 1px solid #2a2a2a; padding-bottom: 6px; margin-bottom: 20px; }
+.bank-name { color: #E60028; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.05em; }
+.header-meta { color: #666; font-size: 0.75rem; }
+.ratio-row { display: flex; gap: 18px; margin: 12px 0 24px 0; }
+.ratio-card { flex: 1; background: #111; border: 1px solid #1e1e1e; border-left: 3px solid #E60028; padding: 14px 18px; }
+.ratio-label { color: #666; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 8px; }
+.ratio-vals { display: flex; gap: 18px; align-items: baseline; flex-wrap: wrap; }
+.ratio-curr { color: #f0f0f0; font-size: 1.25rem; font-weight: 500; }
+.ratio-prior { color: #444; font-size: 0.85rem; }
+.chg-pos { color: #4caf50; font-size: 0.8rem; }
+.chg-neg { color: #E60028; font-size: 0.8rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 8px 0 18px 0; }
+th { background: #111; color: #555; font-weight: 500; text-transform: uppercase;
+     letter-spacing: 0.07em; font-size: 0.67rem; padding: 7px 10px; border-bottom: 1px solid #222; text-align: right; }
 th:first-child { text-align: left; }
-td { padding: 7px 12px; border-bottom: 1px solid #1a1a1a; color: #d0d0d0; text-align: right; }
-td:first-child { text-align: left; color: #f0f0f0; }
-tr:hover td { background: #111; }
-.change-pos { color: #4caf50; }
-.change-neg { color: #E60028; }
-
-/* Concentration */
-.conc-block { margin: 6px 0 20px 0; }
-.conc-item { display: flex; align-items: baseline; gap: 10px; padding: 6px 0;
-    border-bottom: 1px solid #1a1a1a; }
-.conc-rank { color: #E60028; font-size: 0.72rem; font-weight: 600; min-width: 16px; }
-.conc-name { color: #d0d0d0; font-size: 0.82rem; flex: 1; }
-.conc-pct { color: #f0f0f0; font-size: 0.82rem; font-weight: 500; min-width: 52px; text-align: right; }
-.conc-val { color: #666; font-size: 0.75rem; min-width: 120px; text-align: right; }
-
-/* Upload area */
-[data-testid="stFileUploader"] { border: 1px solid #222; background: #0e0e0e; padding: 4px; }
-[data-testid="stFileUploader"] label { color: #888 !important; font-size: 0.78rem; }
-
-/* Download button */
-[data-testid="stDownloadButton"] > button {
-    background: transparent; border: 1px solid #E60028; color: #E60028;
-    font-size: 0.75rem; padding: 6px 16px; letter-spacing: 0.05em; text-transform: uppercase; }
+td { padding: 6px 10px; border-bottom: 1px solid #161616; color: #bbb; text-align: right; }
+td:first-child { text-align: left; color: #e0e0e0; }
+tr:hover td { background: #0e0e0e; }
+.pos { color: #4caf50; } .neg { color: #E60028; }
+.conc-item { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; border-bottom: 1px solid #161616; }
+.conc-rank { color: #E60028; font-size: 0.7rem; font-weight: 600; min-width: 18px; }
+.conc-name { color: #ccc; font-size: 0.8rem; flex: 1; }
+.conc-pct { color: #f0f0f0; font-size: 0.8rem; font-weight: 500; min-width: 55px; text-align: right; }
+.conc-val { color: #555; font-size: 0.74rem; min-width: 130px; text-align: right; }
+.unit-badge { background: #1a1a1a; border: 1px solid #2a2a2a; color: #888;
+              font-size: 0.68rem; padding: 2px 8px; border-radius: 2px; display: inline-block; margin-bottom: 14px; }
+hr { border-color: #1a1a1a; margin: 22px 0; }
+[data-testid="stFileUploader"] { border: 1px solid #1e1e1e; background: #0e0e0e; padding: 4px; }
+[data-testid="stDownloadButton"] > button { background: transparent; border: 1px solid #E60028;
+    color: #E60028; font-size: 0.72rem; padding: 5px 14px; letter-spacing: 0.05em; text-transform: uppercase; }
 [data-testid="stDownloadButton"] > button:hover { background: #E60028; color: #fff; }
-
-/* Divider */
-hr { border-color: #1e1e1e; margin: 20px 0; }
-
-/* Expander */
-[data-testid="stExpander"] { border: 1px solid #222; background: #0e0e0e; }
-summary { color: #555 !important; font-size: 0.75rem !important; }
+[data-testid="stExpander"] { border: 1px solid #1e1e1e !important; background: #0a0a0a; }
+summary { color: #444 !important; font-size: 0.72rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,304 +63,440 @@ summary { color: #555 !important; font-size: 0.75rem !important; }
 # ─────────────────────────────────────────────────────────────────────────────
 def to_num(s):
     if not isinstance(s, str): return None
-    s = s.strip().replace(",","").replace(" ","")
-    s = re.sub(r"HK\$|'000|港幣千元|%","",s)
+    s = s.strip().replace(",", "").replace("\xa0", "").replace(" ", "")
+    s = re.sub(r"HK\$|US\$|'000|港幣千元|%|—|–|-{2,}", "", s)
+    s = s.strip()
+    if s in ("", "—", "-", "Nil", "nil"): return None
     neg = s.startswith("(") and s.endswith(")")
-    s = re.sub(r"[()$]","",s)
+    s = re.sub(r"[()$]", "", s)
     try:
-        v = float(s); return -v if neg else v
-    except: return None
+        v = float(s)
+        return -v if neg else v
+    except:
+        return None
 
 def nums_from_line(line):
-    tokens = re.findall(r"\([\d,]+(?:\.\d+)?\)|[\d,]+(?:\.\d+)?",line)
+    tokens = re.findall(r"\([\d,]+(?:\.\d+)?\)|[\d,]+(?:\.\d+)?", line)
     return [v for t in tokens for v in [to_num(t)] if v is not None]
 
+def detect_unit(text):
+    """Return multiplier: 1 for '000s, 1000 for millions (to normalise to HKD units)."""
+    text_lower = text.lower()
+    if re.search(r"in millions|million[s]? of hk|hkd.*million|million.*hkd|millions of hong kong", text_lower):
+        return 1_000_000, "HKD millions"
+    if re.search(r"'000|thousands|in thousands|hkd.*'000", text_lower):
+        return 1_000, "HKD thousands"
+    # Default assumption: thousands (most HKMA docs)
+    return 1_000, "HKD thousands (assumed)"
+
 def extract_pages(pdf_bytes):
-    pages=[]
+    pages = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for i,page in enumerate(pdf.pages):
-            text=page.extract_text() or ""
-            lines=[l.strip() for l in text.splitlines() if l.strip()]
-            rows=[]
+        for i, page in enumerate(pdf.pages):
+            text = page.extract_text() or ""
+            lines = [l.strip() for l in text.splitlines() if l.strip()]
+            rows = []
             for tbl in (page.extract_tables() or []):
                 for row in tbl:
-                    rows.append([c.strip() if isinstance(c,str) else (c or "") for c in row])
-            pages.append((i,lines,rows))
+                    rows.append([c.strip() if isinstance(c, str) else (c or "") for c in row])
+            pages.append((i, lines, rows))
     return pages
 
 def ocr_text(pdf_bytes):
     if not OCR_AVAILABLE: return ""
-    imgs=convert_from_bytes(pdf_bytes,dpi=200)
+    imgs = convert_from_bytes(pdf_bytes, dpi=200)
     return "\n".join(pytesseract.image_to_string(img) for img in imgs)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# BALANCE SHEET PARSER — reads assets and liabilities in order from the page
+# This replaces the hardcoded pattern lists and fixes ordering/amount bugs.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Lines to skip (totals, headers, section dividers)
+SKIP_PATTERNS = [
+    r"^total\s+assets", r"^total\s+liabilities", r"^assets$", r"^liabilities$",
+    r"^section", r"^ii\.", r"^i\.", r"balance sheet", r"^\d+$",
+    r"jpmorgan|credit agricole|bnp paribas|hong kong branch",
+    r"as at|as of|dec\s+\d|jun\s+\d",
+    r"hk\$|in millions|in thousands|港幣",
+    r"^page\s*\d", r"^\d+\s*$",
+    r"less:\s*impairment",   # subtraction rows distort concentrations
+    r"provision|impairment allowance",
+]
+
+def should_skip(label):
+    ll = label.lower().strip()
+    for pat in SKIP_PATTERNS:
+        if re.search(pat, ll, re.IGNORECASE):
+            return True
+    return False
+
+def parse_balance_sheet_section(lines, rows, section="assets"):
+    """
+    Parse either the Assets or Liabilities section of the balance sheet.
+    Returns list of {label, curr, prior} dicts, in document order.
+    Strategy: use pdfplumber table rows first (more reliable); fall back to text lines.
+    """
+    items = []
+
+    # ── Try table rows first ──────────────────────────────────────────────────
+    in_section = False
+    end_trigger = r"total\s+liabilities|total\s+assets" if section == "assets" else r"end_never_match"
+    start_trigger = r"^assets$|assets\s*$" if section == "assets" else r"^liabilities$|liabilities\s*$"
+
+    for row in rows:
+        cells = [c.strip() for c in row if isinstance(c, str) and c.strip()]
+        if not cells: continue
+        label = cells[0]
+        ll = label.lower()
+
+        if re.search(start_trigger, ll, re.IGNORECASE):
+            in_section = True; continue
+        if in_section and re.search(r"total\s+(assets|liabilities)", ll, re.IGNORECASE):
+            if section == "assets" and "liabilities" not in ll: in_section = False; continue
+            elif section == "liabilities": in_section = False; continue
+        if not in_section: continue
+        if should_skip(label): continue
+
+        nums = [to_num(c) for c in cells[1:] if to_num(c) is not None]
+        if len(nums) >= 2:
+            items.append({"label": label, "curr": nums[0], "prior": nums[1]})
+        elif len(nums) == 1:
+            items.append({"label": label, "curr": nums[0], "prior": None})
+
+    if items:
+        return items
+
+    # ── Fallback: text line scanning ──────────────────────────────────────────
+    in_section = False
+    for i, line in enumerate(lines):
+        ll = line.lower()
+        if re.search(start_trigger, ll, re.IGNORECASE):
+            in_section = True; continue
+        if in_section and re.search(r"total\s+(assets|liabilities)", ll, re.IGNORECASE):
+            in_section = False; continue
+        if not in_section: continue
+        if should_skip(line): continue
+
+        nums = nums_from_line(line)
+        # strip the label (non-numeric prefix)
+        label_match = re.match(r"^([^\d\(]+)", line)
+        label = label_match.group(1).strip() if label_match else line
+        if label and len(nums) >= 1:
+            items.append({
+                "label": label,
+                "curr": nums[0],
+                "prior": nums[1] if len(nums) >= 2 else None,
+            })
+
+    return items
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TARGETED METRIC FINDERS
+# ─────────────────────────────────────────────────────────────────────────────
 def find_val(lines, rows, pattern):
     for row in rows:
-        joined=" ".join(str(c) for c in row).lower()
-        if re.search(pattern,joined):
-            nums=[to_num(c) for c in row if to_num(c) is not None]
-            if len(nums)>=2: return nums[0],nums[1]
-    for i,line in enumerate(lines):
-        if re.search(pattern,line,re.IGNORECASE):
-            nums=nums_from_line(line)
-            if len(nums)>=2: return nums[0],nums[1]
-            for j in range(i+1,min(i+4,len(lines))):
-                nums+=nums_from_line(lines[j])
-                if len(nums)>=2: return nums[0],nums[1]
+        joined = " ".join(str(c) for c in row).lower()
+        if re.search(pattern, joined):
+            nums = [to_num(c) for c in row if to_num(c) is not None]
+            if len(nums) >= 2: return nums[0], nums[1]
+    for i, line in enumerate(lines):
+        if re.search(pattern, line, re.IGNORECASE):
+            nums = nums_from_line(line)
+            if len(nums) >= 2: return nums[0], nums[1]
+            for j in range(i + 1, min(i + 4, len(lines))):
+                nums += nums_from_line(lines[j])
+                if len(nums) >= 2: return nums[0], nums[1]
     return None
 
-def get_provisions(lines):
-    res={"spec_loans":None,"coll_loans":None}
-    in_loans=False
-    for line in lines:
-        ll=line.lower()
-        if re.search(r"impairment allowances for loans and advances",ll):
-            in_loans=True; continue
-        if re.search(r"impairment allowances for other claims",ll):
-            in_loans=False; continue
-        if in_loans and len(nums_from_line(line))>=2:
-            nums=nums_from_line(line)
-            if re.search(r"collective|組合",ll) and res["coll_loans"] is None:
-                res["coll_loans"]=(abs(nums[0]),abs(nums[1]))
-            elif re.search(r"specific|特定",ll) and res["spec_loans"] is None:
-                res["spec_loans"]=(abs(nums[0]),abs(nums[1]))
-    return res
+def get_provisions(lines, rows):
+    """
+    Handles both layouts:
+    - CA-CIB: 'Impairment allowances for loans and advances' block with Collective / Specific sub-rows
+    - JPM: 'Collective provisions' / 'Specific provisions' as standalone rows in loans section
+    Returns dict with spec/coll values or None.
+    """
+    spec, coll = None, None
 
-def get_lmr_cfr(lines,pdf_bytes):
-    lmr=find_val(lines,[],r"average\s+lmr|liquidity maintenance ratio")
-    cfr=find_val(lines,[],r"average\s+cfr|core funding ratio")
+    # Layout 1: standalone labelled rows (JPM style)
+    for row in rows:
+        cells = [c.strip() for c in row if isinstance(c, str)]
+        label = cells[0].lower() if cells else ""
+        nums  = [to_num(c) for c in cells[1:] if to_num(c) is not None]
+        if re.search(r"specific\s+provision|specific\s+impairment", label) and len(nums) >= 2:
+            spec = (abs(nums[0]), abs(nums[1]))
+        if re.search(r"collective\s+provision|collective\s+impairment", label) and len(nums) >= 2:
+            coll = (abs(nums[0]), abs(nums[1]))
+
+    # Also scan text lines for standalone labels
+    for i, line in enumerate(lines):
+        ll = line.lower()
+        nums = nums_from_line(line)
+        if re.search(r"- collective provisions|collective provisions", ll) and len(nums) >= 2 and coll is None:
+            coll = (abs(nums[0]), abs(nums[1]))
+        if re.search(r"- specific provisions|specific provisions", ll) and len(nums) >= 2 and spec is None:
+            spec = (abs(nums[0]), abs(nums[1]))
+
+    # Layout 2: CA-CIB block style (impairment allowances for loans and advances)
+    if spec is None and coll is None:
+        in_loans = False
+        for line in lines:
+            ll = line.lower()
+            if re.search(r"impairment allowances for loans and advances", ll):
+                in_loans = True; continue
+            if re.search(r"impairment allowances for other claims", ll):
+                in_loans = False; continue
+            if in_loans:
+                nums = nums_from_line(line)
+                if len(nums) >= 2:
+                    if re.search(r"collective|組合", ll) and coll is None:
+                        coll = (abs(nums[0]), abs(nums[1]))
+                    elif re.search(r"specific|特定", ll) and spec is None:
+                        spec = (abs(nums[0]), abs(nums[1]))
+
+    return {"spec": spec, "coll": coll}
+
+def get_lmr_cfr(lines, pdf_bytes):
+    lmr = find_val(lines, [], r"average\s+(liquidity maintenance|lmr)")
+    cfr = find_val(lines, [], r"average\s+(core funding|cfr)")
     if not (lmr and cfr):
-        raw=ocr_text(pdf_bytes)
-        ol=[l.strip() for l in raw.splitlines() if l.strip()]
-        if not lmr: lmr=find_val(ol,[],r"average\s+lmr|lmr")
-        if not cfr: cfr=find_val(ol,[],r"average\s+cfr|cfr")
-    return lmr,cfr
+        raw  = ocr_text(pdf_bytes)
+        ol   = [l.strip() for l in raw.splitlines() if l.strip()]
+        if not lmr: lmr = find_val(ol, [], r"average.*lmr|lmr.*%")
+        if not cfr: cfr = find_val(ol, [], r"average.*cfr|cfr.*%")
+    return lmr, cfr
 
-def get_profit(lines,rows):
-    return find_val(lines,rows,r"profit after tax|餘稅後盈利")
-
-ASSET_ITEMS=[
-    ("Amounts due from overseas offices",    r"amounts due from overseas offices"),
-    ("Advances and other accounts",          r"advances and other accounts"),
-    ("Securities held for trading",          r"securities held for trading"),
-    ("Investment securities",                r"investment securities"),
-    ("Placements with banks (1-12m)",        r"placements with banks maturing"),
-    ("Cash and balances with banks",         r"cash and balances with banks"),
-    ("Certificates of deposit held",         r"certificates of deposit held"),
-    ("Trade bills",                          r"trade bills"),
-    ("Other investments",                    r"other investments"),
-    ("Balances due from Exchange Fund",      r"balances due from exchange fund"),
-    ("Property, plant and equipment",        r"property.*plant.*equipment"),
-]
-LIABILITY_ITEMS=[
-    ("Time, call and notice deposits",       r"time.*call.*notice deposits"),
-    ("Saving deposits",                      r"saving deposits"),
-    ("Other accounts and provisions",        r"other accounts and provisions"),
-    ("Deposits and balances from banks",     r"deposits and balances from banks"),
-    ("Demand deposits / current accounts",   r"demand deposits and current accounts"),
-    ("Amount due to overseas offices",       r"amount due to overseas offices"),
-    ("Balances due to Exchange Fund",        r"balances due to exchange fund"),
-    ("Amount payable under repo",            r"amount payable under repo"),
-]
-
-def get_concentration(lines,rows,items,total):
-    found=[]
-    for label,pat in items:
-        hit=find_val(lines,rows,pat)
-        if hit and total:
-            found.append({"item":label,"curr":hit[0],"prior":hit[1],
-                          "pct_curr":round(abs(hit[0])/total[0]*100,2),
-                          "pct_prior":round(abs(hit[1])/total[1]*100,2)})
-    found.sort(key=lambda x:abs(x["curr"]),reverse=True)
-    return found[:3]
+def get_total(lines, rows, pattern):
+    return find_val(lines, rows, pattern)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# EXTRACTION
+# MAIN EXTRACTION
 # ─────────────────────────────────────────────────────────────────────────────
 def run(pdf_bytes):
-    pages=extract_pages(pdf_bytes)
-    all_lines,all_rows=[],[]
-    for _,lines,rows in pages:
-        all_lines+=lines; all_rows+=rows
+    pages = extract_pages(pdf_bytes)
+    all_lines, all_rows = [], []
+    for _, lines, rows in pages:
+        all_lines += lines
+        all_rows  += rows
 
-    data={}
-    data["profit"]    = get_profit(all_lines,all_rows)
-    data["ta"]        = find_val(all_lines,all_rows,r"total\s+assets|總資產")
-    data["tl"]        = find_val(all_lines,all_rows,r"total\s+liabilities|總負債")
-    prov              = get_provisions(all_lines)
-    data["spec"]      = prov["spec_loans"]
-    data["coll"]      = prov["coll_loans"]
-    data["lmr"],data["cfr"] = get_lmr_cfr(all_lines,pdf_bytes)
-    data["asset_conc"]= get_concentration(all_lines,all_rows,ASSET_ITEMS,data["ta"]) if data["ta"] else []
-    data["liab_conc"] = get_concentration(all_lines,all_rows,LIABILITY_ITEMS,data["tl"]) if data["tl"] else []
-    return data
+    full_text = "\n".join(all_lines)
+    unit_mult, unit_label = detect_unit(full_text)
+
+    d = {}
+    d["unit_mult"]  = unit_mult
+    d["unit_label"] = unit_label
+
+    d["ta"]     = get_total(all_lines, all_rows, r"total\s+assets|總資產")
+    d["tl"]     = get_total(all_lines, all_rows, r"total\s+liabilities|總負債")
+    d["profit"] = find_val(all_lines, all_rows, r"profit after tax|餘稅後盈利")
+    prov        = get_provisions(all_lines, all_rows)
+    d["spec"]   = prov["spec"]
+    d["coll"]   = prov["coll"]
+    d["lmr"], d["cfr"] = get_lmr_cfr(all_lines, pdf_bytes)
+
+    # Balance sheet items — read directly in document order
+    d["asset_items"] = parse_balance_sheet_section(all_lines, all_rows, "assets")
+    d["liab_items"]  = parse_balance_sheet_section(all_lines, all_rows, "liabilities")
+
+    return d
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FORMATTING
 # ─────────────────────────────────────────────────────────────────────────────
-def fmt_num(v):
+def fmt_n(v, unit_mult):
     if v is None: return "—"
+    # Display in original document units
     return f"{abs(v):,.0f}"
 
-def fmt_pct(v):
-    if v is None: return "—"
-    sign="+" if v>0 else ""
-    css="change-pos" if v>0 else "change-neg"
-    return f'<span class="{css}">{sign}{v:.2f}%</span>'
+def pct_chg(c, p):
+    if c is None or p is None or p == 0: return None
+    return round((c - p) / abs(p) * 100, 2)
 
-def fmt_pp(v):
+def fmt_chg(v, suffix="%"):
     if v is None: return "—"
-    sign="+" if v>0 else ""
-    css="change-pos" if v>0 else "change-neg"
+    sign = "+" if v > 0 else ""
+    css  = "pos" if v > 0 else "neg"
+    return f'<span class="{css}">{sign}{v:.2f}{suffix}</span>'
+
+def pp_span(v):
+    if v is None: return "—"
+    sign = "+" if v > 0 else ""
+    css  = "chg-pos" if v > 0 else "chg-neg"
     return f'<span class="{css}">{sign}{v:.2f}pp</span>'
 
-def pct_chg(curr,prior):
-    if curr is None or prior is None or prior==0: return None
-    return round((curr-prior)/abs(prior)*100,2)
-
 # ─────────────────────────────────────────────────────────────────────────────
-# UI
+# STREAMLIT UI
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("<h1>HKMA DISCLOSURE READER</h1>", unsafe_allow_html=True)
-
-uploaded=st.file_uploader("Upload HKMA Key Financial Information Disclosure Statement (PDF)",type="pdf")
+uploaded = st.file_uploader("Upload HKMA Key Financial Information Disclosure Statement (PDF)", type="pdf")
 
 if uploaded:
-    pdf_bytes=uploaded.read()
+    pdf_bytes = uploaded.read()
     with st.spinner(""):
-        d=run(pdf_bytes)
+        d = run(pdf_bytes)
 
-    bank=uploaded.name.replace(".pdf","").replace("_"," ").upper()
-    ta,tl=d["ta"],d["tl"]
-    spec,coll=d["spec"],d["coll"]
-    lmr,cfr=d["lmr"],d["cfr"]
-    profit=d["profit"]
+    um   = d["unit_mult"]
+    ul   = d["unit_label"]
+    ta   = d["ta"]
+    tl   = d["tl"]
+    spec = d["spec"]
+    coll = d["coll"]
+    lmr  = d["lmr"]
+    cfr  = d["cfr"]
+    prof = d["profit"]
+    ai   = d["asset_items"]
+    li   = d["liab_items"]
 
-    tot_prov=None
+    tot_prov = None
     if spec and coll:
-        tot_prov=((spec[0]+coll[0]),(spec[1]+coll[1]))
+        tot_prov = (spec[0] + coll[0], spec[1] + coll[1])
+    elif coll:
+        tot_prov = coll
+    elif spec:
+        tot_prov = spec
 
-    # ── Header ────────────────────────────────────────────────────────────────
+    bank = uploaded.name.replace(".pdf", "").replace("_", " ").upper()
+
+    # ── Header ──────────────────────────────────────────────────────────────
     st.markdown(f"""
     <div class="header-bar">
       <span class="bank-name">{bank}</span>
-      <span class="header-meta">Source: HKMA &nbsp;|&nbsp; HKD $'000</span>
+      <span class="header-meta">Source: HKMA &nbsp;|&nbsp; {ul}</span>
     </div>
+    <div class="unit-badge">{ul}</div>
     """, unsafe_allow_html=True)
 
-    # ── Liquidity ratios ──────────────────────────────────────────────────────
+    # ── Liquidity ratios ─────────────────────────────────────────────────────
     st.markdown("<h3>Liquidity Ratios — Q4 YoY</h3>", unsafe_allow_html=True)
-    lmr_curr = f"{lmr[0]:.2f}%" if lmr else "—"
-    lmr_prior= f"{lmr[1]:.2f}%" if lmr else "—"
-    lmr_pp   = round(lmr[0]-lmr[1],2) if lmr else None
-    cfr_curr = f"{cfr[0]:.2f}%" if cfr else "—"
-    cfr_prior= f"{cfr[1]:.2f}%" if cfr else "—"
-    cfr_pp   = round(cfr[0]-cfr[1],2) if cfr else None
-
-    def pp_span(v):
-        if v is None: return "—"
-        sign="+" if v>0 else ""
-        css="ratio-change-pos" if v>0 else "ratio-change-neg"
-        return f'<span class="{css}">{sign}{v:.2f}pp</span>'
+    lmr_pp = round(lmr[0] - lmr[1], 2) if lmr else None
+    cfr_pp = round(cfr[0] - cfr[1], 2) if cfr else None
 
     st.markdown(f"""
     <div class="ratio-row">
       <div class="ratio-card">
         <div class="ratio-label">3m Liquidity Maintenance Ratio (LMR)</div>
         <div class="ratio-vals">
-          <span class="ratio-curr">{lmr_curr}</span>
-          <span class="ratio-prior">{lmr_prior} prior</span>
+          <span class="ratio-curr">{f"{lmr[0]:.2f}%" if lmr else "—"}</span>
+          <span class="ratio-prior">{f"{lmr[1]:.2f}% prior" if lmr else ""}</span>
           {pp_span(lmr_pp)}
         </div>
       </div>
       <div class="ratio-card">
         <div class="ratio-label">3m Core Funding Ratio (CFR)</div>
         <div class="ratio-vals">
-          <span class="ratio-curr">{cfr_curr}</span>
-          <span class="ratio-prior">{cfr_prior} prior</span>
+          <span class="ratio-curr">{f"{cfr[0]:.2f}%" if cfr else "—"}</span>
+          <span class="ratio-prior">{f"{cfr[1]:.2f}% prior" if cfr else ""}</span>
           {pp_span(cfr_pp)}
         </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Main table ────────────────────────────────────────────────────────────
+    # ── Key financials table ─────────────────────────────────────────────────
     st.markdown("<h3>Key Financials — Half-Year</h3>", unsafe_allow_html=True)
 
-    rows_data=[
-        ("Profit after taxation",  profit),
-        ("Total assets",           ta),
-        ("Total liabilities",      tl),
-        ("Specific provisions",    spec),
-        ("Collective provisions",  coll),
-        ("Total provisions",       tot_prov),
+    kf_rows = [
+        ("Profit after taxation",    prof),
+        ("Total assets",             ta),
+        ("Total liabilities",        tl),
+        ("Specific provisions",      spec),
+        ("Collective provisions",    coll),
+        ("Total provisions",         tot_prov),
     ]
-
-    rows_html=""
-    for label,(pair) in rows_data:
+    rows_html = ""
+    for label, pair in kf_rows:
         if pair:
-            c,p=pair[0],pair[1]
-            rows_html+=f"""<tr>
-              <td>{label}</td>
-              <td>{fmt_num(c)}</td>
-              <td>{fmt_num(p)}</td>
-              <td>{fmt_pct(pct_chg(c,p))}</td>
-            </tr>"""
+            c, p = pair[0], pair[1]
+            rows_html += f"<tr><td>{label}</td><td>{fmt_n(c,um)}</td><td>{fmt_n(p,um)}</td><td>{fmt_chg(pct_chg(c,p))}</td></tr>"
         else:
-            rows_html+=f"<tr><td>{label}</td><td>—</td><td>—</td><td>—</td></tr>"
+            rows_html += f"<tr><td>{label}</td><td>—</td><td>—</td><td>—</td></tr>"
 
     st.markdown(f"""
     <table>
-      <thead><tr>
-        <th>Item</th><th>Current</th><th>Prior</th><th>Change</th>
-      </tr></thead>
+      <thead><tr><th>Item</th><th>Current</th><th>Prior</th><th>Change</th></tr></thead>
       <tbody>{rows_html}</tbody>
     </table>
     """, unsafe_allow_html=True)
 
-    # ── Concentration ─────────────────────────────────────────────────────────
-    def conc_block(items,period_label):
-        html=f'<div style="color:#888;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">{period_label}</div>'
-        html+='<div class="conc-block">'
-        for i,a in enumerate(items,1):
-            html+=f"""<div class="conc-item">
+    # ── Asset concentration top 3 ────────────────────────────────────────────
+    def conc_section(items, total_val, section_title):
+        if not items or not total_val: return
+        valid = [x for x in items if x["curr"] is not None and abs(x["curr"]) > 0]
+        valid.sort(key=lambda x: abs(x["curr"]), reverse=True)
+        top3 = valid[:3]
+        st.markdown(f"<h3>{section_title} — Top 3</h3>", unsafe_allow_html=True)
+        html = '<div>'
+        for i, x in enumerate(top3, 1):
+            pct = round(abs(x["curr"]) / abs(total_val[0]) * 100, 2) if total_val[0] else 0
+            html += f"""<div class="conc-item">
               <span class="conc-rank">#{i}</span>
-              <span class="conc-name">{a['item']}</span>
-              <span class="conc-pct">{a['pct_curr']:.2f}%</span>
-              <span class="conc-val">HKD {fmt_num(a['curr'])}</span>
+              <span class="conc-name">{x['label']}</span>
+              <span class="conc-pct">{pct:.2f}%</span>
+              <span class="conc-val">{ul.split()[0]} {fmt_n(x['curr'],um)}</span>
             </div>"""
-        html+="</div>"
-        return html
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
 
-    if d["asset_conc"]:
-        st.markdown("<h3>Asset Concentration — Top 3</h3>", unsafe_allow_html=True)
-        st.markdown(conc_block(d["asset_conc"],"Current period"),unsafe_allow_html=True)
+    conc_section(ai, ta, "Asset Concentration")
+    conc_section(li, tl, "Liability Concentration")
 
-    if d["liab_conc"]:
-        st.markdown("<h3>Liability Concentration — Top 3</h3>", unsafe_allow_html=True)
-        st.markdown(conc_block(d["liab_conc"],"Current period"),unsafe_allow_html=True)
+    # ── Full asset breakdown ─────────────────────────────────────────────────
+    def full_breakdown(items, total_val, title):
+        if not items or not total_val: return
+        valid = [x for x in items if x["curr"] is not None]
+        valid.sort(key=lambda x: abs(x["curr"]) if x["curr"] else 0, reverse=True)
+        st.markdown(f"<h3>{title}</h3>", unsafe_allow_html=True)
+        rows_h = ""
+        for x in valid:
+            pct_c = round(abs(x["curr"]) / abs(total_val[0]) * 100, 2) if total_val[0] and x["curr"] else None
+            pct_p = round(abs(x["prior"]) / abs(total_val[1]) * 100, 2) if total_val[1] and x.get("prior") else None
+            rows_h += f"""<tr>
+              <td>{x['label']}</td>
+              <td>{fmt_n(x['curr'],um)}</td>
+              <td>{"—" if pct_c is None else f"{pct_c:.2f}%"}</td>
+              <td>{fmt_n(x.get('prior'),um)}</td>
+              <td>{"—" if pct_p is None else f"{pct_p:.2f}%"}</td>
+            </tr>"""
+        st.markdown(f"""
+        <table>
+          <thead><tr>
+            <th>Item</th>
+            <th>Current</th><th>% of Total</th>
+            <th>Prior</th><th>% of Total</th>
+          </tr></thead>
+          <tbody>{rows_h}</tbody>
+        </table>
+        """, unsafe_allow_html=True)
 
-    # ── Download ──────────────────────────────────────────────────────────────
-    st.markdown("<hr>",unsafe_allow_html=True)
-    export_rows=[]
-    for label,pair in rows_data:
+    st.markdown("<hr>", unsafe_allow_html=True)
+    full_breakdown(ai, ta, "Full Asset Breakdown")
+    full_breakdown(li, tl, "Full Liability Breakdown")
+
+    # ── CSV download ─────────────────────────────────────────────────────────
+    st.markdown("<hr>", unsafe_allow_html=True)
+    export = []
+    for label, pair in kf_rows:
         if pair:
-            export_rows.append({"Metric":label,"Current":pair[0],"Prior":pair[1],
-                                 "Change %":pct_chg(pair[0],pair[1])})
+            export.append({"Section":"Key Financials","Item":label,
+                           "Current":pair[0],"Prior":pair[1],"Change%":pct_chg(pair[0],pair[1])})
     if lmr:
-        export_rows.append({"Metric":"Average LMR","Current":f"{lmr[0]}%","Prior":f"{lmr[1]}%","Change %":None,"Change pp":lmr_pp})
+        export.append({"Section":"Liquidity","Item":"Average LMR","Current":f"{lmr[0]}%","Prior":f"{lmr[1]}%","Change pp":lmr_pp})
     if cfr:
-        export_rows.append({"Metric":"Average CFR","Current":f"{cfr[0]}%","Prior":f"{cfr[1]}%","Change %":None,"Change pp":cfr_pp})
-    for a in d["asset_conc"]:
-        export_rows.append({"Metric":f"Top asset: {a['item']}","Current":a["curr"],"Prior":a["prior"],"Concentration %":a["pct_curr"]})
-    for l in d["liab_conc"]:
-        export_rows.append({"Metric":f"Top liability: {l['item']}","Current":l["curr"],"Prior":l["prior"],"Concentration %":l["pct_curr"]})
+        export.append({"Section":"Liquidity","Item":"Average CFR","Current":f"{cfr[0]}%","Prior":f"{cfr[1]}%","Change pp":cfr_pp})
+    for x in sorted(ai, key=lambda x: abs(x["curr"]) if x["curr"] else 0, reverse=True):
+        pct = round(abs(x["curr"]) / abs(ta[0]) * 100, 2) if ta and x["curr"] else None
+        export.append({"Section":"Assets","Item":x["label"],"Current":x["curr"],"Prior":x.get("prior"),"% of Total":pct})
+    for x in sorted(li, key=lambda x: abs(x["curr"]) if x["curr"] else 0, reverse=True):
+        pct = round(abs(x["curr"]) / abs(tl[0]) * 100, 2) if tl and x["curr"] else None
+        export.append({"Section":"Liabilities","Item":x["label"],"Current":x["curr"],"Prior":x.get("prior"),"% of Total":pct})
 
-    csv=pd.DataFrame(export_rows).to_csv(index=False).encode("utf-8")
-    st.download_button("DOWNLOAD CSV",data=csv,
-                       file_name=f"{uploaded.name.replace('.pdf','')}_metrics.csv",mime="text/csv")
+    csv = pd.DataFrame(export).to_csv(index=False).encode("utf-8")
+    st.download_button("DOWNLOAD CSV", data=csv,
+                       file_name=f"{uploaded.name.replace('.pdf','')}_metrics.csv", mime="text/csv")
 
     with st.expander("raw extracted lines"):
-        all_lines_flat=[]
-        for _,lines,_ in extract_pages(pdf_bytes):
-            all_lines_flat+=lines
-        st.text("\n".join(all_lines_flat[:300]))
+        pages2 = extract_pages(pdf_bytes)
+        dbg = []
+        for _,ll,_ in pages2: dbg += ll
+        st.text("\n".join(dbg[:300]))
+
