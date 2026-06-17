@@ -1,7 +1,9 @@
 import streamlit as st
 import pdfplumber
 import pandas as pd
-import re, io, datetime
+import re
+import io
+import datetime
 
 try:
     from pdf2image import convert_from_bytes
@@ -10,264 +12,282 @@ try:
 except ImportError:
     OCR_AVAILABLE = False
 
-st.markdown("""
+st.set_page_config(page_title="HKMA Disclosure Analyser", layout="wide")
+
+CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
 *, *::before, *::after { box-sizing: border-box; }
-html, body,
-[data-testid="stAppViewContainer"],[data-testid="stHeader"],
-[data-testid="stToolbar"],[data-testid="stSidebar"],
-.main,.block-container,[data-testid="stVerticalBlock"],[class*="css"] {
-    font-family:'DM Sans',sans-serif !important;
-    background-color:#ffffff !important; color:#111111 !important;
+html, body, [class*="css"] {
+    font-family: 'Raleway', 'Arial Narrow', Arial, sans-serif !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
 }
-.stApp,[data-testid="stAppViewContainer"]{background:#ffffff !important;}
-.block-container{max-width:860px !important;padding:2.5rem 2rem 5rem !important;}
-p,span,div,li{color:#111111 !important;}
-h1{font-family:'DM Sans',sans-serif !important;font-size:.72rem !important;font-weight:700 !important;
-   letter-spacing:.18em !important;text-transform:uppercase !important;color:#E60028 !important;
-   border-bottom:1.5px solid #E60028 !important;padding-bottom:10px !important;margin-bottom:4px !important;}
-h2{font-family:'DM Sans',sans-serif !important;font-size:.65rem !important;font-weight:600 !important;
-   letter-spacing:.18em !important;text-transform:uppercase !important;color:#555555 !important;
-   border-bottom:1px solid #eeeeee !important;padding-bottom:5px !important;
-   margin-top:36px !important;margin-bottom:10px !important;}
-h3{font-family:'DM Sans',sans-serif !important;font-size:.63rem !important;font-weight:600 !important;
-   letter-spacing:.14em !important;text-transform:uppercase !important;color:#888888 !important;
-   margin-top:22px !important;margin-bottom:8px !important;}
-.pg-header{display:flex;justify-content:space-between;align-items:flex-end;
-           border-bottom:2px solid #111111;padding-bottom:12px;margin-bottom:4px;}
-.pg-bank{font-size:1.45rem;font-weight:700;color:#111111 !important;letter-spacing:-.01em;line-height:1.1;}
-.pg-meta{font-size:.68rem;color:#999999 !important;text-align:right;line-height:1.7;}
-.unit-tag{display:inline-block;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-          color:#E60028 !important;border:1px solid #E60028;padding:2px 8px;margin:10px 0 20px 0;}
-.desc-block{border-left:3px solid #E60028;padding:10px 14px;background:#fafafa !important;margin-bottom:28px;}
-.desc-text{font-size:.78rem;color:#444444 !important;line-height:1.65;}
-.snapshot{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-          gap:1px;background:#e8e8e8;border:1px solid #e8e8e8;margin-bottom:32px;}
-.kpi{background:#ffffff !important;padding:14px 16px;}
-.kpi-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#999999 !important;margin-bottom:6px;}
-.kpi-val{font-size:1.05rem;font-weight:700;color:#111111 !important;line-height:1;}
-.kpi-chg-pos{font-size:.65rem;color:#1a7a3a !important;margin-top:4px;}
-.kpi-chg-neg{font-size:.65rem;color:#E60028 !important;margin-top:4px;}
-.ratio-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 28px;}
-.ratio-card{border:1px solid #e8e8e8;border-top:2.5px solid #E60028;padding:16px 18px;background:#ffffff !important;}
-.ratio-label{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#aaaaaa !important;margin-bottom:10px;}
-.ratio-main{font-size:1.6rem;font-weight:700;color:#111111 !important;line-height:1;}
-.ratio-prior{font-size:.72rem;color:#cccccc !important;margin-left:6px;}
-.chg-pos{font-size:.68rem;font-weight:600;color:#1a7a3a !important;}
-.chg-neg{font-size:.68rem;font-weight:600;color:#E60028 !important;}
-table{width:100%;border-collapse:collapse;font-size:.77rem;margin:6px 0 20px;background:#ffffff !important;}
-thead tr{border-bottom:2px solid #111111;}
-th{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#999999 !important;
-   background:#ffffff !important;padding:0 12px 8px;text-align:right;white-space:nowrap;}
-th:first-child{text-align:left;}
-td{padding:8px 12px;border-bottom:1px solid #f2f2f2;color:#222222 !important;text-align:right;background:#ffffff !important;}
-td:first-child{text-align:left;font-weight:500;color:#111111 !important;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#fef5f5 !important;}
-.pos{color:#1a7a3a !important;font-weight:600;} .neg{color:#E60028 !important;font-weight:600;} .muted{color:#bbbbbb !important;}
-.rank{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;
-      font-size:.6rem;font-weight:700;color:#E60028 !important;border:1px solid #E60028;margin-right:8px;vertical-align:middle;}
-.rule{border:none;border-top:1px solid #e8e8e8;margin:32px 0 0;}
-[data-testid="stFileUploader"]{border:1px dashed #dddddd !important;background:#fafafa !important;padding:6px !important;}
-[data-testid="stDownloadButton"]>button{background:#ffffff !important;border:1.5px solid #111111 !important;
-    color:#111111 !important;font-family:'DM Sans',sans-serif !important;font-size:.68rem !important;
-    font-weight:600 !important;letter-spacing:.1em !important;text-transform:uppercase !important;
-    padding:8px 20px !important;border-radius:0 !important;}
-[data-testid="stDownloadButton"]>button:hover{background:#E60028 !important;border-color:#E60028 !important;color:#ffffff !important;}
-[data-testid="stExpander"]{border:1px solid #eeeeee !important;background:#fafafa !important;}
-details summary{color:#cccccc !important;font-size:.68rem !important;}
+.stApp { background: #FFFFFF !important; }
+.block-container { max-width: 1120px; padding: 1.5rem 2rem 3rem; }
+[data-testid="stFileUploader"] {
+    border: 2px dashed #D0D0D0 !important;
+    padding: 18px !important;
+    background: #FAFAFA !important;
+}
+.pg-header { border-bottom: 3px solid #E60028; padding-bottom: 10px; margin-bottom: 24px; }
+.pg-header h1 { font-size: 1.4rem; font-weight: 700; color: #1A1A1A; margin: 0 0 3px; }
+.pg-header .sub { font-size: 0.79rem; color: #6B6B6B; margin: 0; }
+.entity-banner { background: #F7F7F7; border-left: 5px solid #E60028; padding: 14px 20px; margin-bottom: 22px; }
+.entity-banner h2 { font-size: 1.15rem; font-weight: 700; color: #1A1A1A; margin: 0 0 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+.entity-banner .meta { font-size: 0.78rem; color: #6B6B6B; }
+.entity-banner .desc { font-size: 0.84rem; color: #1A1A1A; margin-top: 8px; line-height: 1.6; }
+.sec-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 2.2px; text-transform: uppercase;
+    color: #E60028; border-bottom: 1px solid #E60028; padding-bottom: 5px; margin: 28px 0 14px; }
+.kpi-card { flex: 1; min-width: 130px; background: #FFFFFF;
+    border: 1px solid #E8E8E8; border-top: 3px solid #E60028; padding: 13px 16px; }
+.kpi-label { font-size: 0.59rem; font-weight: 700; color: #6B6B6B;
+    letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5px; }
+.kpi-val { font-size: 1.25rem; font-weight: 700; color: #1A1A1A; line-height: 1.2; }
+.kpi-chg { font-size: 0.71rem; margin-top: 3px; }
+.chg-pos { color: #E60028; font-weight: 700; }
+.chg-neg { color: #1A1A1A; font-weight: 700; }
+.neutral-box { background: #F7F7F7; border-left: 3px solid #CCCCCC;
+    padding: 11px 16px; font-size: 0.84rem; color: #1A1A1A; margin: 8px 0 12px; line-height: 1.65; }
+.analysis-box { background: #FFFFFF; border-top: 2px solid #E60028;
+    border-bottom: 1px solid #E8E8E8; padding: 16px 20px; margin: 8px 0 18px; }
+.analysis-box .ah { font-size: 0.59rem; font-weight: 700; color: #E60028;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.analysis-box p { font-size: 0.85rem; color: #1A1A1A; line-height: 1.75; margin: 0 0 9px; }
+.analysis-box p:last-child { margin-bottom: 0; }
+table.rep { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 4px; }
+table.rep th { background: #1A1A1A; color: #FFFFFF; padding: 8px 12px; text-align: left;
+    font-size: 0.63rem; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; }
+table.rep td { padding: 7px 12px; border-bottom: 1px solid #EEEEEE; color: #1A1A1A; }
+table.rep tr:last-child td { border-bottom: none; }
+table.rep tr:hover td { background: #F7F7F7; }
+.nr { text-align: right !important; font-variant-numeric: tabular-nums; }
+.brow td { font-weight: 700 !important; background: #F7F7F7 !important; }
+.conc-wrap { background: #FFFFFF; border: 1px solid #E8E8E8; border-top: 2px solid #E60028; padding: 14px 18px; margin-bottom: 10px; }
+.conc-head { font-size: 0.59rem; font-weight: 700; color: #6B6B6B;
+    letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 10px; }
+.conc-item { display: flex; align-items: center; gap: 10px; padding: 6px 0;
+    border-bottom: 1px solid #F2F2F2; font-size: 0.82rem; }
+.conc-item:last-child { border-bottom: none; }
+.ci-rank { color: #E60028; font-weight: 700; min-width: 18px; }
+.ci-name { flex: 1; color: #1A1A1A; }
+.ci-pct { font-weight: 700; color: #E60028; min-width: 52px; text-align: right; }
+.ci-val { font-size: 0.74rem; color: #6B6B6B; min-width: 95px; text-align: right; }
+.bar-wrap { background: #FFFFFF; border: 1px solid #E8E8E8; padding: 16px 18px; margin: 10px 0; }
+.bar-title { font-size: 0.63rem; font-weight: 700; color: #6B6B6B;
+    letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 13px; }
+.bar-row { margin-bottom: 9px; }
+.bar-lrow { display: flex; justify-content: space-between; font-size: 0.75rem; color: #1A1A1A; margin-bottom: 3px; }
+.bar-track { background: #F0F0F0; height: 10px; border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 2px; }
+.lmr-block { background: #FFFFFF; border: 1px solid #E8E8E8; border-left: 4px solid #E60028; padding: 14px 18px; margin-bottom: 10px; }
+.lmr-title { font-size: 0.63rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #E60028; margin-bottom: 8px; }
+.lmr-vals { font-size: 1.05rem; font-weight: 700; color: #1A1A1A; margin-bottom: 8px; }
+.lmr-bullet { padding-left: 0; margin: 0; }
+.lmr-bullet li { list-style: none; font-size: 0.83rem; color: #1A1A1A; line-height: 1.7;
+    margin-bottom: 3px; padding-left: 14px; position: relative; }
+.lmr-bullet li::before { content: "--"; color: #E60028; font-weight: 700; margin-right: 6px; position: absolute; left: 0; }
 </style>
+"""
+st.markdown(CSS, unsafe_allow_html=True)
+
+st.markdown("""
+<div class="pg-header">
+  <h1>HKMA Financial Disclosure Analyser</h1>
+  <p class="sub">Upload any HKMA Banking (Disclosure) Rules filing. Branches, incorporated banks, restricted licence banks.</p>
+</div>
 """, unsafe_allow_html=True)
 
 CANONICAL = {
-    r"cash and balances":                                              "Cash and balances with banks",
-    r"balances with banks$":                                           "Balances with banks",
-    r"balances with the monetary authority":                           "Balances with Monetary Authority",
+    r"cash and balances": "Cash and balances with banks",
+    r"balances with banks$": "Balances with banks",
+    r"balances with the monetary authority": "Balances with Monetary Authority",
     r"balances due from exchange fund|due from exchange fund|amount due from exchange fund": "Due from Exchange Fund",
-    r"placements with banks":                                          "Placements with banks",
-    r"amounts? due from overseas offices|amount due from overseas":    "Amounts due from overseas offices",
-    r"trade bills":                                                    "Trade bills",
-    r"certificates? of deposit held":                                  "Certificates of deposit held",
-    r"securities held for trading":                                    "Securities held for trading",
-    r"advances and other accounts":                                    "Advances and other accounts",
-    r"loans and receivables":                                          "Loans and receivables",
-    r"investment securities":                                          "Investment securities",
-    r"other investments":                                              "Other investments",
-    r"property.*plant.*equipment|property and equipment":             "Property, plant & equipment",
-    r"deposits and balances from central banks|from central banks":    "Deposits from central banks / Monetary Authority",
-    r"deposits and balances from banks|deposits from banks":          "Deposits and balances from banks",
-    r"balances due to exchange fund|amount due to exchange fund":      "Balances due to Exchange Fund",
-    r"demand deposits and current accounts|demand deposits":           "Demand deposits and current accounts",
-    r"saving deposits":                                                "Saving deposits",
-    r"time.*call.*notice deposits":                                    "Time, call and notice deposits",
-    r"amounts? due to overseas offices|amount due to overseas":        "Amount due to overseas offices",
-    r"certificates? of deposit issued":                                "Certificates of deposit issued",
-    r"issued debt securities":                                         "Issued debt securities",
-    r"amount payable under repo":                                      "Amount payable under repo",
-    r"other accounts and provisions|other liabilities":                "Other accounts / liabilities",
-    r"^provisions$":                                                   "Provisions",
-    r"deposits from customers":                                        "Deposits from customers",
+    r"placements with banks": "Placements with banks",
+    r"amounts? due from overseas offices|amount due from overseas": "Amounts due from overseas offices",
+    r"trade bills": "Trade bills",
+    r"certificates? of deposit held": "Certificates of deposit held",
+    r"securities held for trading": "Securities held for trading",
+    r"advances and other accounts": "Advances and other accounts",
+    r"loans and receivables": "Loans and receivables",
+    r"investment securities": "Investment securities",
+    r"other investments": "Other investments",
+    r"property.*plant.*equipment|property and equipment": "Property, plant and equipment",
+    r"deposits and balances from central banks|from central banks": "Deposits from central banks",
+    r"deposits and balances from banks|deposits from banks": "Deposits and balances from banks",
+    r"balances due to exchange fund|amount due to exchange fund": "Balances due to Exchange Fund",
+    r"demand deposits and current accounts|demand deposits": "Demand deposits and current accounts",
+    r"saving deposits": "Saving deposits",
+    r"time.*call.*notice deposits": "Time, call and notice deposits",
+    r"amounts? due to overseas offices|amount due to overseas": "Amount due to overseas offices",
+    r"certificates? of deposit issued": "Certificates of deposit issued",
+    r"issued debt securities": "Issued debt securities",
+    r"amount payable under repo": "Amount payable under repo",
+    r"other accounts and provisions|other liabilities": "Other accounts / liabilities",
+    r"^provisions$": "Provisions",
+    r"deposits from customers": "Deposits from customers",
 }
 
 def canonicalize(raw):
     ll = raw.lower().strip()
     for pat, clean in CANONICAL.items():
-        if re.search(pat, ll, re.IGNORECASE): return clean
-    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ",raw)
+        if re.search(pat, ll, re.IGNORECASE):
+            return clean
+    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ", raw)
     s = re.sub(r"\s+"," ",s).strip()
     s = re.sub(r"[,\.\-\s]+$","",s).strip()
     return s[:70].rsplit(" ",1)[0].strip() if len(s)>70 else s
 
 def clean_num(s):
     if not isinstance(s,str): return None
-    s=s.strip().replace(",","").replace("\xa0","").replace(" ","")
-    s=re.sub(r"HK\$|US\$|'000|港幣千元","",s).strip()
-    if s in ("","—","-","–","Nil","nil","N/A"): return None
-    neg=s.startswith("(") and s.endswith(")")
-    s=re.sub(r"[()$]","",s)
-    try: v=float(s); return -v if neg else v
-    except: return None
+    s = s.strip().replace(",","").replace("\xa0","").replace(" ","")
+    s = re.sub(r"HK\$|US\$|'000|港幣千元","",s).strip()
+    if s in ("","--","-","Nil","nil","N/A"): return None
+    neg = s.startswith("(") and s.endswith(")")
+    s = re.sub(r"[()$]","",s)
+    try:
+        v = float(s)
+        return -v if neg else v
+    except:
+        return None
 
 def trailing_nums(line):
-    tokens=re.findall(r"\([\d,]+(?:\.\d+)?\)|[\d,]+(?:\.\d+)?",line)
+    tokens = re.findall(r"\([\d,]+(?:\.\d+)?\)|[\d,]+(?:\.\d+)?", line)
     return [v for t in tokens for v in [clean_num(t)] if v is not None]
 
 def raw_label(line):
-    # Strip markdown table pipes and bold markers
     s = re.sub(r"\|","",line)
     s = re.sub(r"\*{1,2}","",s)
     s = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+"," ",s)
     s = re.sub(r"(\s+[\(\-]?[\d,]+[\)]?)+\s*$","",s).strip()
-    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]{3,}.*$","",s)
+    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ",s)
     s = re.sub(r"\(see\s+part.*$","",s,flags=re.IGNORECASE).strip()
     s = re.sub(r",?\s*net\s+of\s+impairment\s+allowance","",s,flags=re.IGNORECASE).strip()
-    s = re.sub(r"[^a-zA-Z0-9\s,&'\-/\(\)\.:]+"," ",s)
     return re.sub(r"\s+"," ",s).strip()
 
-def detect_unit_per_page(page_lines):
-    """Return (unit_label, multiplier) for a specific page's lines."""
-    for line in page_lines:
-        if re.search(r"in millions|millions of hk|million[s]? of hong kong",line,re.IGNORECASE):
-            return "HKD millions",1_000_000
-        if re.search(r"HK\$\s*'?\s*0{3}",line,re.IGNORECASE): return "HKD thousands",1_000
-        if re.search(r"'000",line,re.IGNORECASE): return "HKD thousands",1_000
-    return None
-
 def detect_unit(lines):
-    # Check first 150 lines for unit declaration
-    r = detect_unit_per_page(lines[:150])
-    if r: return r
+    for line in lines[:150]:
+        if re.search(r"in millions|millions of hk|million[s]? of hong kong",line,re.IGNORECASE):
+            return "HKD millions", 1_000_000
+        if re.search(r"HK\$\s*'?\s*0{3}",line,re.IGNORECASE):
+            return "HKD thousands", 1_000
+        if re.search(r"'000",line,re.IGNORECASE):
+            return "HKD thousands", 1_000
     for line in lines:
-        if re.search(r"HK\$\s*'?\s*0{3}|'000",line,re.IGNORECASE): return "HKD thousands",1_000
-    for line in lines:
-        if re.search(r"in millions|millions of hk",line,re.IGNORECASE): return "HKD millions",1_000_000
-    return "HKD thousands",1_000
+        if re.search(r"HK\$\s*'?\s*0{3}|'000",line,re.IGNORECASE):
+            return "HKD thousands", 1_000
+        if re.search(r"in millions|millions of hk",line,re.IGNORECASE):
+            return "HKD millions", 1_000_000
+    return "HKD thousands", 1_000
 
-def fmt_n(v): return "—" if v is None else f"{abs(v):,.0f}"
+def fmt_n(v): return "--" if v is None else f"{abs(v):,.0f}"
 def pct_chg(c,p): return None if (c is None or p is None or p==0) else round((c-p)/abs(p)*100,2)
 def fmt_chg(v):
-    if v is None: return '<span class="muted">—</span>'
-    return f'<span class="{"pos" if v>0 else "neg"}">{"+" if v>0 else ""}{v:.2f}%</span>'
+    if v is None: return "--"
+    cls = "chg-pos" if v>0 else "chg-neg"
+    s = "+" if v>0 else ""
+    return f'<span class="{cls}">{s}{v:.2f}%</span>'
 def pp_html(v):
-    if v is None: return '<span class="muted">—</span>'
-    return f'<span class="{"chg-pos" if v>0 else "chg-neg"}">{"+" if v>0 else ""}{v:.2f}pp</span>'
-def fmt_snapshot(v,multiplier):
-    if v is None: return "—"
-    hkd=abs(v)*multiplier
+    if v is None: return "--"
+    cls = "chg-pos" if v>0 else "chg-neg"
+    s = "+" if v>0 else ""
+    return f'<span class="{cls}">{s}{v:.2f}pp</span>'
+def fmt_snapshot(v,mult):
+    if v is None: return "--"
+    hkd = abs(v)*mult
     if hkd>=1e12: return f"{hkd/1e12:.2f}T"
     if hkd>=1e9:  return f"{hkd/1e9:.1f}B"
     if hkd>=1e6:  return f"{hkd/1e6:.0f}M"
     return f"{hkd:,.0f}"
+
 def is_noise(line):
-    s=line.strip()
+    s = line.strip()
     if not s or len(s)<4: return True
     if re.match(r"^[^a-zA-Z0-9\-\(]",s): return True
     if re.match(r"^[A-Z]\d+\s*$",s): return True
     return False
 
-# ── FIX: strip markdown/pipe chars before section matching ──
 def clean_for_match(line):
     s = re.sub(r"\|","",line)
     s = re.sub(r"\*{1,2}","",s)
     s = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+"," ",s)
     return re.sub(r"\s+"," ",s).strip()
 
+HARD_SKIP = re.compile(
+    r"^total\s+(assets|liabilities)|^assets\s*$|^liabilities\s*$|"
+    r"^equity\s+and\s+liabilities\s*$|^less:\s*impairment|"
+    r"^impairment\s+allowances\s+for|^provision\s+for\s+impaired|"
+    r"^balance\s+sheet|^section\s+[a-z]|^\d+\s*$|^page\s|"
+    r"^reserves?\s*$|^[-_=\s]+$|^note\s|^figures\s+in|^unaudited|"
+    r"^international\s+claims|^non-bank|^currency\s+risk|^remuneration|"
+    r"^group\s+consolidated|^declaration\s+of\s+compliance",
+    re.IGNORECASE)
+INCOME_SKIP = re.compile(
+    r"profit\s+before\s+tax|profit\s+after\s+tax|net\s+profit\s*$|"
+    r"interest\s+income|interest\s+expense|operating\s+income|"
+    r"operating\s+expense|taxation\s+charge|tax\s+expense|"
+    r"reversal\s+of\s+impairment|net\s+write|net\s+fees|"
+    r"net\s+interest|gains\s+less\s+losses|total\s+operating",
+    re.IGNORECASE)
+DED_SKIP    = re.compile(r"^\s*[-]\s+(collective|specific)\b", re.IGNORECASE)
+HEADER_SKIP = re.compile(
+    r"^natixis\s*$|^corporate\s+and\s+investment\s+banking\s*$|"
+    r"^groupe\s+bpce\s*$|^kpmg",
+    re.IGNORECASE)
+
 def extract_pages(pdf_bytes):
-    pages=[]
+    pages = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for i,page in enumerate(pdf.pages):
-            text=page.extract_text() or ""
-            lines=[l.strip() for l in text.splitlines() if l.strip()]
-            rows=[]
+            text = page.extract_text() or ""
+            lines = [l.strip() for l in text.splitlines() if l.strip()]
+            rows  = []
             for tbl in (page.extract_tables() or []):
                 for row in tbl:
                     rows.append([c.strip() if isinstance(c,str) else (c or "") for c in row])
-            pages.append((i,lines,rows))
+            pages.append((i, lines, rows))
     return pages
 
 def ocr_all(pdf_bytes):
     if not OCR_AVAILABLE: return []
-    imgs=convert_from_bytes(pdf_bytes,dpi=200)
-    out=[]
+    imgs = convert_from_bytes(pdf_bytes, dpi=200)
+    out  = []
     for img in imgs:
-        t=pytesseract.image_to_string(img)
-        out+=[l.strip() for l in t.splitlines() if l.strip()]
+        t = pytesseract.image_to_string(img)
+        out += [l.strip() for l in t.splitlines() if l.strip()]
     return out
 
-HARD_SKIP=re.compile(
-    r"^total\s+(assets|liabilities)|^assets\s*$|^liabilities\s*$|^equity\s+and\s+liabilities\s*$|"
-    r"^less:\s*impairment|^impairment\s+allowances\s+for|^provision\s+for\s+impaired|"
-    r"^balance\s+sheet|^section\s+[a-z]|^\d+\s*$|^page\s|^reserves?\s*$|^[-_=\s]+$|"
-    r"^note\s+附|^figures\s+in|^unaudited|^i{1,3}\.?\s+unaudited|^international\s+claims|"
-    r"^non-bank\s+mainland|^currency\s+risk|^remuneration|^group\s+consolidated|"
-    r"^declaration\s+of\s+compliance",
-    re.IGNORECASE)
-INCOME_SKIP=re.compile(
-    r"profit\s+before\s+tax|profit\s+after\s+tax|net\s+profit\s*$|interest\s+income|interest\s+expense|"
-    r"operating\s+income|operating\s+expense|taxation\s+charge|tax\s+expense|"
-    r"reversal\s+of\s+impairment|net\s+write\s+(back|charge)|net\s+fees|net\s+interest|"
-    r"gains\s+less\s+losses|total\s+operating",re.IGNORECASE)
-DED_SKIP=re.compile(r"^\s*[-–]\s+(collective|specific)\b",re.IGNORECASE)
-# Skip Natixis page-header lines that appear on every page
-HEADER_SKIP=re.compile(r"^natixis\s*$|^corporate\s+and\s+investment\s+banking\s*$|^groupe\s+bpce\s*$|^kpmg",re.IGNORECASE)
-
 def parse_bs(lines, section="assets"):
-    """
-    Parse balance sheet items. Handles both plain-text and table-extracted (pipe-delimited) formats.
-    Units are assumed to be whatever detect_unit() found for the balance sheet pages.
-    """
-    items = []
+    items  = []
     in_sec = False
     if section == "assets":
         s_pat = re.compile(r"^\**assets\**\s*$|^\**assets\**\s+as\s+at", re.IGNORECASE)
-        e_pat = re.compile(r"total\s+assets|總資產", re.IGNORECASE)
+        e_pat = re.compile(r"total\s+assets", re.IGNORECASE)
     else:
         s_pat = re.compile(r"^\**liabilities\**\s*$|equity\s+and\s+liabilities", re.IGNORECASE)
-        e_pat = re.compile(r"total\s+liabilities|總負債", re.IGNORECASE)
-
+        e_pat = re.compile(r"total\s+liabilities", re.IGNORECASE)
     for line in lines:
-        s = line.strip()
+        s  = line.strip()
         if not s: continue
         cm = clean_for_match(s)
-        if s_pat.match(cm): in_sec = True; continue
-        if not in_sec: continue
-        if e_pat.search(cm): in_sec = False; continue
+        if s_pat.match(cm):    in_sec = True; continue
+        if not in_sec:         continue
+        if e_pat.search(cm):   in_sec = False; continue
         if HARD_SKIP.search(cm) or INCOME_SKIP.search(cm) or DED_SKIP.match(cm): continue
         if HEADER_SKIP.match(cm): continue
         if is_noise(cm): continue
-
-        nums = trailing_nums(s)
+        nums  = trailing_nums(s)
         if not nums: continue
-        curr = nums[-2] if len(nums) >= 2 else nums[-1]
+        curr  = nums[-2] if len(nums) >= 2 else nums[-1]
         prior = nums[-1] if len(nums) >= 2 else None
         if curr == 0 and (prior is None or prior == 0): continue
-        rl = raw_label(s); label = canonicalize(rl)
+        rl    = raw_label(s)
+        label = canonicalize(rl)
         if not label or len(label) < 2: continue
-        if re.match(r"^[\d,.()\-\s]+$", label): continue
-        # Deduplicate
+        if re.match(r"^[\d,.() \-\s]+$", label): continue
         if any(x["label"] == label for x in items): continue
-        items.append({"label": label, "curr": abs(curr), "prior": abs(prior) if prior is not None else None})
+        items.append({"label": label, "curr": abs(curr),
+                      "prior": abs(prior) if prior is not None else None})
     return items
 
 def find_two(lines, pattern):
@@ -275,7 +295,7 @@ def find_two(lines, pattern):
         if re.search(pattern, line, re.IGNORECASE):
             nums = trailing_nums(line)
             if len(nums) >= 2: return nums[-2], nums[-1]
-            for j in range(i+1, min(i+4, len(lines))):
+            for j in range(i+1, min(i+4,len(lines))):
                 nums += trailing_nums(lines[j])
                 if len(nums) >= 2: return nums[-2], nums[-1]
     return None
@@ -284,14 +304,16 @@ def get_provisions(lines):
     spec, coll = None, None
     for line in lines:
         ll = line.lower()
-        if re.search(r"collective\s+(impairment|provision)|[-–]\s*collective\b|綜合減值", ll):
+        if re.search(r"collective\s+(impairment|provision)|[-]\s*collective\b", ll):
             nums = trailing_nums(line)
             if nums and coll is None:
-                coll = (abs(nums[-2] if len(nums)>=2 else nums[-1]), abs(nums[-1]) if len(nums)>=2 else None)
-        if re.search(r"specific\s+(impairment|provision)|individual\s+impairment|[-–]\s*specific\b|特殊性撥備", ll):
+                coll = (abs(nums[-2] if len(nums)>=2 else nums[-1]),
+                        abs(nums[-1]) if len(nums)>=2 else None)
+        if re.search(r"specific\s+(impairment|provision)|individual\s+impairment|[-]\s*specific\b", ll):
             nums = trailing_nums(line)
             if nums and spec is None:
-                spec = (abs(nums[-2] if len(nums)>=2 else nums[-1]), abs(nums[-1]) if len(nums)>=2 else None)
+                spec = (abs(nums[-2] if len(nums)>=2 else nums[-1]),
+                        abs(nums[-1]) if len(nums)>=2 else None)
     return {"spec": spec, "coll": coll}
 
 def get_lmr_cfr(lines, pdf_bytes):
@@ -304,407 +326,837 @@ def get_lmr_cfr(lines, pdf_bytes):
     return lmr, cfr
 
 def get_entity_name(lines):
-    """
-    Extract the bank name from the cover page.
-    Strategy 1: find a line containing 'Hong Kong Branch' — this is always the entity name.
-    Strategy 2: scan the first 60 lines, skip known non-name headers, return first substantive name.
-    Never falls back to the filename.
-    """
     NON_NAME = re.compile(
         r"^(natixis\s+corporate|corporate\s+and\s+investment|groupe\s+bpce|kpmg|"
         r"financial\s+information\s+disclosure|financial\s+statements|"
         r"incorporated\s+in|unaudited|figures\s+in|for\s+identification|"
-        r"investment\s+banking|and\s+investment)",
-        re.IGNORECASE)
-
-    # Pass 1: explicit "Hong Kong Branch" line — most reliable signal
+        r"investment\s+banking|and\s+investment)", re.IGNORECASE)
     for line in lines[:60]:
-        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
-        clean = re.sub(r"\(.*?\)", "", clean).strip()   # drop legal brackets
-        clean = re.sub(r"\s+", " ", clean).strip()
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
+        clean = re.sub(r"\(.*?\)","",clean).strip()
+        clean = re.sub(r"\s+"," ",clean).strip()
         if re.search(r"hong\s+kong\s+branch", clean, re.IGNORECASE):
-            # Must have at least one word before "Hong Kong Branch"
-            before = re.sub(r"hong\s+kong\s+branch.*$", "", clean, flags=re.IGNORECASE).strip()
-            if len(before.split()) >= 1:
-                return clean[:100]
-
-    # Pass 2: first substantive capitalized line on the cover
+            before = re.sub(r"hong\s+kong\s+branch.*$","",clean,flags=re.IGNORECASE).strip()
+            if len(before.split()) >= 1: return clean[:100]
     for line in lines[:20]:
-        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
-        clean = re.sub(r"\(.*?\)", "", clean).strip()
-        clean = re.sub(r"\s+", " ", clean).strip()
-        if not clean or len(clean) < 4: continue
-        if re.match(r"^[\d\s\-/]+$", clean): continue
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
+        clean = re.sub(r"\(.*?\)","",clean).strip()
+        clean = re.sub(r"\s+"," ",clean).strip()
+        if not clean or len(clean)<4: continue
+        if re.match(r"^[\d\s\-/]+$",clean): continue
         if NON_NAME.match(clean): continue
-        # Must look like a proper name (has letters, not all lowercase prose)
-        if len(clean.split()) >= 1 and clean[0].isupper():
-            return clean[:100]
+        if len(clean.split())>=1 and clean[0].isupper(): return clean[:100]
     return "Unknown Bank"
 
 def get_branch_description(lines):
-    """Extract 'Branch activities' or compliance-declaration paragraph."""
-    in_para = False; para_lines = []
+    in_para, para_lines = False, []
     section_headers = re.compile(
         r"^(additional\s+profit|profit\s+and\s+loss|balance\s+sheet|off-balance|"
         r"supplementary|section\s+[a-z]|contents|for\s+the\s+(year|half)|remuneration|"
         r"liquidity|currency\s+risk|international\s+claims|mainland|group\s+consolidated)",
         re.IGNORECASE)
     for line in lines:
-        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
-        clean = re.sub(r"[^a-zA-Z0-9\s,&\.\-/()\!:@'\"]+" , " ", clean).strip()
-        clean = re.sub(r"\s+", " ", clean).strip()
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
+        clean = re.sub(r"[^a-zA-Z0-9\s,&\.\-/()\!:@'\"]+","",clean).strip()
+        clean = re.sub(r"\s+"," ",clean).strip()
         if re.search(r"branch activities|branch information", clean, re.IGNORECASE):
             in_para = True; continue
         if in_para:
-            if not clean or len(clean) < 5: continue
-            if section_headers.match(clean) or re.match(r"^[-_=]+$", clean): break
-            if re.match(r"^[\d\s]+$", clean): continue
+            if not clean or len(clean)<5: continue
+            if section_headers.match(clean) or re.match(r"^[-_=]+$",clean): break
+            if re.match(r"^[\d\s]+$",clean): continue
             para_lines.append(clean)
-            if len(" ".join(para_lines)) > 350: break
+            if len(" ".join(para_lines))>350: break
     desc = " ".join(para_lines)
-    # Fallback: use compliance declaration paragraph for entity description
     if not desc:
-        for i, line in enumerate(lines):
-            clean = re.sub(r"[\u4e00-\u9fff]+", "", line).strip()
-            if re.search(r"we have pleasure in presenting|incorporated in|registered under|a branch of", clean, re.IGNORECASE) and len(clean.split()) > 8:
+        for line in lines:
+            clean = re.sub(r"[\u4e00-\u9fff]+","",line).strip()
+            if re.search(r"we have pleasure|incorporated in|registered under|a branch of",
+                         clean,re.IGNORECASE) and len(clean.split())>8:
                 desc = clean; break
-    if len(desc) > 350: desc = desc[:350].rsplit(" ", 1)[0] + "…"
+    if len(desc)>350: desc = desc[:350].rsplit(" ",1)[0]+"..."
     return desc
 
 def get_period(lines):
     for line in lines:
-        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+", "", line).strip()
-        if re.search(r"(year|period|half.year)\s+ended|for the year|as at|as of", clean, re.IGNORECASE):
-            if re.search(r"\d{4}", clean):
-                return re.sub(r"\s+", " ", clean).strip()[:80]
+        clean = re.sub(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+","",line).strip()
+        if re.search(r"(year|period|half.year)\s+ended|for the year|as at|as of",clean,re.IGNORECASE):
+            if re.search(r"\d{4}",clean):
+                return re.sub(r"\s+"," ",clean).strip()[:80]
     return ""
+
+def get_profit_loss(lines):
+    r = find_two(lines, r"profit\s+after\s+tax(?:ation)?|net\s+profit\s*$|除稅後溢利")
+    if r: return r
+    return find_two(lines, r"profit\s+before\s+tax(?:ation)?")
 
 def run(pdf_bytes):
     pages = extract_pages(pdf_bytes)
     all_lines = []
-    for _, lines, _ in pages: all_lines += lines
-
-    # Detect unit from balance sheet pages (pages 1-5 typically) — avoid mixed-unit later pages
+    for _,lines,_ in pages: all_lines += lines
     bs_lines = []
-    for _, lines, _ in pages[:6]: bs_lines += lines
-    ul, mult = detect_unit(bs_lines)
+    for _,lines,_ in pages[:6]: bs_lines += lines
+    ul, mult  = detect_unit(bs_lines)
+    ta        = find_two(all_lines, r"total\s+assets|總資產")
+    tl        = find_two(all_lines, r"total\s+liabilities|總負債")
+    profit    = get_profit_loss(all_lines)
+    prov      = get_provisions(all_lines)
+    lmr, cfr  = get_lmr_cfr(all_lines, pdf_bytes)
+    ai        = parse_bs(all_lines, "assets")
+    li        = parse_bs(all_lines, "liabilities")
+    entity    = get_entity_name(all_lines)
+    desc      = get_branch_description(all_lines)
+    period    = get_period(all_lines)
+    return {"unit_label":ul,"multiplier":mult,"ta":ta,"tl":tl,"profit":profit,
+            "spec":prov["spec"],"coll":prov["coll"],"lmr":lmr,"cfr":cfr,
+            "asset_items":ai,"liab_items":li,"entity":entity,"desc":desc,
+            "period":period,"raw_lines":all_lines}
 
-    ta     = find_two(all_lines, r"total\s+assets|總資產")
-    tl     = find_two(all_lines, r"total\s+liabilities|總負債")
-    profit = find_two(all_lines, r"profit\s+after\s+tax(?:ation)?|net\s+profit\s*$|除稅後溢利")
-    prov   = get_provisions(all_lines)
-    lmr, cfr = get_lmr_cfr(all_lines, pdf_bytes)
-    ai = parse_bs(all_lines, "assets")
-    li = parse_bs(all_lines, "liabilities")
-    entity  = get_entity_name(all_lines)
-    desc    = get_branch_description(all_lines)
-    period  = get_period(all_lines)
-    return {"unit_label": ul, "multiplier": mult, "ta": ta, "tl": tl, "profit": profit,
-            "spec": prov["spec"], "coll": prov["coll"], "lmr": lmr, "cfr": cfr,
-            "asset_items": ai, "liab_items": li, "entity": entity, "desc": desc,
-            "period": period, "raw_lines": all_lines}
+# ── ANALYSIS ENGINE ────────────────────────────────────────────────────────────
 
-def dir_word(c,p):
-    if c is None or p is None: return "changed"
-    return "increased" if c>p else "decreased" if c<p else "remained flat"
-def conc_word(c,p):
-    if c is None or p is None: return "changed"
-    d=c-p
-    if abs(d)<0.5: return "remained broadly stable"
-    return f"{'increased' if d>0 else 'decreased'} by {abs(d):.2f}pp"
+def build_analysis(d, mult, ul):
+    ta     = d["ta"];   tl    = d["tl"]
+    profit = d["profit"]
+    spec   = d["spec"]; coll  = d["coll"]
+    lmr    = d["lmr"];  cfr   = d["cfr"]
+    ai = sorted([x for x in d["asset_items"] if x["curr"]], key=lambda x:x["curr"], reverse=True)
+    li = sorted([x for x in d["liab_items"]  if x["curr"]], key=lambda x:x["curr"], reverse=True)
+    entity = d["entity"] or "This institution"
 
-def generate_report_html(d,filename,ul,mult):
-    entity=d["entity"] or filename; period=d["period"] or ""; desc=d["desc"] or ""
-    ta,tl=d["ta"],d["tl"]; prof=d["profit"]; spec,coll=d["spec"],d["coll"]
-    lmr,cfr=d["lmr"],d["cfr"]; ai,li=d["asset_items"],d["liab_items"]
-    tc_c=ta[0] if ta else None; tc_p=ta[1] if ta else None
-    tl_c=tl[0] if tl else None; tl_p=tl[1] if tl else None
-    tot_prov=None
+    tc_c = ta[0] if ta else None;  tc_p = ta[1] if ta else None
+    tl_c = tl[0] if tl else None;  tl_p = tl[1] if tl else None
+    pr_c = profit[0] if profit else None; pr_p = profit[1] if profit else None
+
+    roa        = round(pr_c/tc_c*100,3) if (pr_c and tc_c) else None
+    roa_p      = round(pr_p/tc_p*100,3) if (pr_p and tc_p) else None
+    profit_chg = pct_chg(pr_c,pr_p)
+    asset_chg  = pct_chg(tc_c,tc_p)
+
+    tot_prov_c = tot_prov_p = None
     if spec and coll:
-        c2=(spec[1]+coll[1]) if spec[1] and coll[1] else None
-        tot_prov=(spec[0]+coll[0],c2)
-    elif coll: tot_prov=coll
-    elif spec: tot_prov=spec
-    ai_s=sorted([x for x in ai if x["curr"]],key=lambda x:x["curr"],reverse=True)
-    li_s=sorted([x for x in li if x["curr"]],key=lambda x:x["curr"],reverse=True)
-    ai3=ai_s[:3]; li3=li_s[:3]
-    ai_p=sorted([x for x in ai if x.get("prior")],key=lambda x:x["prior"],reverse=True)[:3]
-    li_p=sorted([x for x in li if x.get("prior")],key=lambda x:x["prior"],reverse=True)[:3]
+        tot_prov_c = (spec[0] or 0)+(coll[0] or 0)
+        tot_prov_p = ((spec[1] or 0)+(coll[1] or 0)) if (spec[1] is not None or coll[1] is not None) else None
+    elif spec:  tot_prov_c = spec[0]; tot_prov_p = spec[1]
+    elif coll:  tot_prov_c = coll[0]; tot_prov_p = coll[1]
+    prov_chg = pct_chg(tot_prov_c, tot_prov_p)
 
-    def bullets(items,total_c,total_p,is_prior=False,is_liab=False):
-        if not items: return "<p style='color:#bbb;font-size:.78rem'>No data extracted.</p>"
-        s="liabilities" if is_liab else "assets"; html=""
+    out = {}
+
+    # LMR
+    if lmr:
+        lc,lp = lmr[0],lmr[1]
+        diff  = round(lc-lp,2) if lp else None
+        direction = "increased" if (diff or 0)>0 else ("decreased" if (diff or 0)<0 else "remained stable")
+        if lc>=300:   level="exceptionally high"
+        elif lc>=150: level="very strong"
+        elif lc>=75:  level="solid"
+        elif lc>=35:  level="adequate"
+        else:         level="tight, approaching the 25% regulatory floor"
+        top_a = ai[0]["label"] if ai else ""
+        if lc>=150 and "overseas" in top_a.lower():
+            reason="high intragroup asset placements qualifying as HQLA, reflecting this branch's role as a group liquidity vehicle"
+        elif lc>=150:
+            reason="a structurally large stock of liquid assets relative to short-term liabilities, consistent with conservative treasury positioning"
+        else:
+            reason="normal balance sheet management within internal limits"
+        if diff and abs(diff)>20:
+            cause=("a significant shift in the short-term funding mix -- either a reduction in wholesale borrowings "
+                   "or an increase in liquid asset holdings. Executives should confirm whether this reflects deliberate "
+                   "repositioning or a timing effect around the reporting date.")
+        elif diff and diff>0:  cause="modest accumulation of HQLA or a small reduction in short-term liabilities"
+        elif diff and diff<0:  cause="deployment of liquid assets into higher-yielding instruments or loans, or an increase in short-term wholesale funding"
+        else:                  cause="stable balance sheet composition with no material change in liquidity drivers"
+        out.update(lmr_c=lc,lmr_p=lp,lmr_diff=diff,lmr_direction=direction,
+                   lmr_level=level,lmr_reason=reason,lmr_cause=cause)
+    else:
+        out.update(lmr_c=None,lmr_p=None,lmr_diff=None,lmr_direction=None,
+                   lmr_level=None,lmr_reason=None,lmr_cause=None)
+
+    # CFR
+    if cfr:
+        cc,cp = cfr[0],cfr[1]
+        cdiff = round(cc-cp,2) if cp else None
+        cdir  = "decreased" if (cdiff or 0)<0 else ("increased" if (cdiff or 0)>0 else "remained stable")
+        if cc>=200:
+            cmean=(f"stable funding covers illiquid assets by {cc/100:.1f}x, providing strong structural resilience. "
+                   "The branch is not dependent on short-term wholesale markets to fund its balance sheet.")
+        elif cc>=100:
+            cmean=("stable funding just covers illiquid assets. The branch meets structural requirements "
+                   "but has limited buffer against deposit outflows or funding market disruption.")
+        else:
+            cmean=("stable funding does not fully cover illiquid assets -- a structural maturity mismatch. "
+                   "The branch relies on short-term funding for longer-term assets, which should be monitored closely.")
+        out.update(cfr_c=cc,cfr_p=cp,cfr_diff=cdiff,cfr_dir=cdir,cfr_meaning=cmean)
+    else:
+        out.update(cfr_c=None,cfr_p=None,cfr_diff=None,cfr_dir=None,cfr_meaning=None)
+
+    # Asset concentration
+    if ai and tc_c:
+        top_name = ai[0]["label"]
+        top_pct  = ai[0]["curr"]/tc_c*100
+        if "overseas" in top_name.lower():
+            a_analysis=(f"The dominant position of {top_name} ({top_pct:.1f}% of total assets) confirms "
+                        f"{entity} operates primarily as an intragroup booking and funding conduit. "
+                        "The real credit exposure does not reside on this balance sheet -- it sits at the parent group level. "
+                        "Executives reviewing this filing should focus on parent group health, not local provisions. "
+                        "The HKMA supervises this structure under its overseas branch framework, which requires the parent "
+                        "to stand behind all local obligations.")
+        elif "loan" in top_name.lower() or "advance" in top_name.lower():
+            llr=round(tot_prov_c/ai[0]["curr"]*100,2) if (tot_prov_c and ai[0]["curr"]) else None
+            a_analysis=(f"A loan-dominant balance sheet ({top_pct:.1f}% in {top_name}) signals this branch "
+                        "generates revenue primarily from credit intermediation. Credit risk sits with local "
+                        "and external borrowers -- local provisions are the primary risk barometer."
+                        +(f" The loan loss reserve stands at {llr:.2f}% of the dominant loan category, "
+                          f"{'which is thin and worth monitoring closely' if llr and llr<1 else 'a reasonable buffer for current conditions'}."
+                          if llr else "")
+                        +" Executives should watch the NPL trajectory and provision coverage ratio as leading indicators.")
+        elif "investment" in top_name.lower() or "securities" in top_name.lower():
+            a_analysis=(f"An investment-led balance sheet ({top_pct:.1f}% in {top_name}) means this branch "
+                        "operates as a treasury and market-making vehicle. Duration mismatch and mark-to-market "
+                        "volatility on the securities portfolio are the primary executive risk concerns.")
+        else:
+            a_analysis=(f"The balance sheet is reasonably diversified. The largest position ({top_name} at {top_pct:.1f}%) "
+                        "does not indicate a structural concentration. Risk is distributed across business lines, "
+                        "reducing idiosyncratic exposure while potentially reflecting a less focused business model.")
+
+        prior_ai = sorted([x for x in ai if x.get("prior")],key=lambda x:x["prior"],reverse=True)
+        curr_top3  = {x["label"] for x in ai[:3]}
+        prior_top3 = {x["label"] for x in prior_ai[:3]}
+        same_comp  = curr_top3 == prior_top3
+        top3_curr_conc  = sum(x["curr"] for x in ai[:3])/tc_c*100 if tc_c else 0
+        top3_prior_conc = sum(x["prior"] for x in prior_ai[:3])/tc_p*100 if (prior_ai and tc_p) else None
+
+        if same_comp:
+            if top3_prior_conc:
+                diff_c = top3_curr_conc-top3_prior_conc
+                trend  = "increased" if diff_c>0 else "decreased" if diff_c<0 else "was unchanged"
+                comp_sent=(f"The top 3 biggest assets remain the same between the two periods. "
+                           f"The concentration of the three biggest assets {trend}, "
+                           f"with the combined share moving from {top3_prior_conc:.1f}% to {top3_curr_conc:.1f}% of total assets.")
+            else:
+                comp_sent="The top 3 biggest assets remain the same between the two periods."
+        else:
+            added   = curr_top3-prior_top3
+            removed = prior_top3-curr_top3
+            comp_sent=("The top 3 biggest assets changed between periods. "
+                       +(f"Newly entering the top 3: {', '.join(added)}. " if added else "")
+                       +(f"No longer in top 3: {', '.join(removed)}. " if removed else "")
+                       +f"Combined concentration of current top 3: {top3_curr_conc:.1f}%.")
+        out.update(a_analysis=a_analysis,a_comp_sent=comp_sent,
+                   ai_sorted=ai,prior_ai=prior_ai,
+                   top3_curr_conc=top3_curr_conc,top3_prior_conc=top3_prior_conc)
+    else:
+        out.update(a_analysis=None,a_comp_sent=None,ai_sorted=[],prior_ai=[],
+                   top3_curr_conc=None,top3_prior_conc=None)
+
+    # Liability concentration
+    if li and tl_c:
+        top_l     = li[0]["label"]
+        top_l_pct = li[0]["curr"]/tl_c*100
+        if "customer" in top_l.lower() or ("deposit" in top_l.lower() and "bank" not in top_l.lower()):
+            l_analysis=(f"Customer deposits ({top_l_pct:.1f}% of liabilities) are the primary funding source. "
+                        "This is the most stable funding type but carries behavioural and repricing risk. "
+                        "A retail deposit franchise protects net interest margin in a rising rate environment "
+                        "but creates vulnerability if rates fall or deposit competition intensifies."
+                        +(f" The LMR of {out['lmr_c']:.1f}% provides adequate short-term coverage." if out.get("lmr_c") else ""))
+        elif "overseas" in top_l.lower() or ("bank" in top_l.lower() and top_l_pct>30):
+            l_analysis=(f"Wholesale and intragroup funding ({top_l_pct:.1f}% in {top_l}) dominates the liability structure. "
+                        "This is the most fragile funding type -- it can be withdrawn at short notice and is the first "
+                        "channel through which parent group stress transmits to this balance sheet. "
+                        "Executives should assess rollover risk and parent credit standing. The CFR is the most important ratio here."
+                        +(f" A CFR of {out['cfr_c']:.1f}% {'indicates adequate structural funding cover' if (out.get('cfr_c') or 0)>=100 else 'indicates a structural gap requiring monitoring'}." if out.get("cfr_c") else ""))
+        else:
+            l_analysis=(f"The funding base is reasonably diversified with {top_l} at {top_l_pct:.1f}% as the largest source. "
+                        "No single liability category creates an overwhelming concentration risk. "
+                        "The maturity profile and repricing structure of the largest components should be reviewed alongside the liquidity disclosures.")
+
+        prior_li = sorted([x for x in li if x.get("prior")],key=lambda x:x["prior"],reverse=True)
+        curr_top3_l  = {x["label"] for x in li[:3]}
+        prior_top3_l = {x["label"] for x in prior_li[:3]}
+        same_l = curr_top3_l == prior_top3_l
+        movers = []
+        for x in li:
+            if x.get("prior") and tl_c and tl_p:
+                cp2 = x["curr"]/tl_c*100; pp2 = x["prior"]/tl_p*100
+                movers.append((x["label"],cp2-pp2,cp2,pp2))
+        movers.sort(key=lambda x:abs(x[1]),reverse=True)
+        top3l_curr  = sum(x["curr"] for x in li[:3])/tl_c*100 if tl_c else 0
+        top3l_prior = sum(x["prior"] for x in prior_li[:3])/tl_p*100 if (prior_li and tl_p) else None
+
+        if same_l:
+            if top3l_prior:
+                ld = top3l_curr-top3l_prior
+                lt = "rose" if ld>0 else "fell" if ld<0 else "was unchanged"
+                l_comp_sent=(f"The top 3 biggest liabilities remain the same between the two periods, "
+                             f"though the concentration {lt} from {top3l_prior:.1f}% to {top3l_curr:.1f}%. ")
+            else:
+                l_comp_sent="The top 3 biggest liabilities remain the same between the two periods. "
+        else:
+            added_l = curr_top3_l-prior_top3_l
+            l_comp_sent=(f"The top 3 biggest liabilities changed between periods."
+                         +(f" Newly entering: {', '.join(added_l)}." if added_l else "")
+                         +f" Combined concentration of current top 3: {top3l_curr:.1f}%. ")
+        if movers:
+            mv   = movers[0]
+            sign = "rose" if mv[1]>0 else "fell"
+            l_comp_sent+=(f"From the prior period, the concentration of {mv[0]} {sign} by around {abs(mv[1]):.1f}pp "
+                          f"(from {mv[3]:.1f}% to {mv[2]:.1f}%).")
+        out.update(l_analysis=l_analysis,l_comp_sent=l_comp_sent,li_sorted=li,prior_li=prior_li)
+    else:
+        out.update(l_analysis=None,l_comp_sent=None,li_sorted=[],prior_li=[])
+
+    # Credit risk sentence
+    if tot_prov_c is not None:
+        direction = "rose" if (prov_chg or 0)>0 else "fell"
+        pct_abs   = abs(prov_chg) if prov_chg else 0
+        if spec and coll:
+            drv="a mix of specific and collective provisions"
+            impl=("both identified borrower-level deterioration and broader portfolio stress" if (prov_chg or 0)>0
+                  else "releases across both impaired-credit and model-driven collective allowances")
+        elif spec:
+            drv="specific provisions"
+            impl=("more identified credit risk on named counterparties" if (prov_chg or 0)>0
+                  else "specific provisions being released as impaired credits resolved")
+        elif coll:
+            drv="collective provisions"
+            impl=("a broader portfolio-level expected-loss build" if (prov_chg or 0)>0
+                  else "improving expected-loss estimates across the portfolio")
+        else:
+            drv="provisions"; impl="higher identified credit risk" if (prov_chg or 0)>0 else "improving credit quality"
+
+        dom = out.get("ai_sorted",[None])[0]["label"] if out.get("ai_sorted") else ""
+        if "overseas" in dom.lower():
+            risk_loc="the parent group and its global counterparty network"
+            risk_ctx=("Local provisions are largely symbolic relative to the intragroup asset base. "
+                      "The real credit risk sits on the consolidated parent balance sheet.")
+        elif "loan" in dom.lower() or "advance" in dom.lower():
+            risk_loc="external borrowers in the local loan book"
+            risk_ctx=("The provisions trajectory is the key leading indicator, typically leading NPL recognition by one to two quarters.")
+        else:
+            risk_loc="a distributed mix of local and intragroup counterparties"
+            risk_ctx="Credit risk is diversified; no single exposure dominates the risk profile."
+
+        out["credit_sent"]=(
+            f"Provisions {direction} {pct_abs:.1f}%, driven by {drv}, implying {impl}. "
+            f"The dominant asset is {dom if dom else 'not clearly identifiable'}, "
+            f"so credit risk sits primarily with {risk_loc}. {risk_ctx}"
+            if prov_chg is not None else
+            f"Provisions are reported but no prior-period comparison is available. "
+            f"Credit risk sits primarily with {risk_loc}. {risk_ctx}"
+        )
+    else:
+        out["credit_sent"] = None
+
+    # Executive analysis
+    positives, concerns = [], []
+    if out.get("lmr_c") and out["lmr_c"]>=100:
+        positives.append(f"LMR of {out['lmr_c']:.1f}% ({out.get('lmr_level','strong')}) -- well above the 25% regulatory floor")
+    elif out.get("lmr_c") and out["lmr_c"]<50:
+        concerns.append(f"LMR of {out['lmr_c']:.1f}% is approaching the regulatory minimum; short-term liquidity is thin")
+    if out.get("cfr_c") and out["cfr_c"]>=200:
+        positives.append(f"CFR of {out['cfr_c']:.1f}% -- structural funding covers illiquid assets {out['cfr_c']/100:.1f}x")
+    elif out.get("cfr_c") and out["cfr_c"]<100:
+        concerns.append("CFR below 100% indicates a structural maturity mismatch -- stable funding does not cover illiquid assets")
+    if roa and roa>0.5:
+        positives.append(f"ROA of {roa:.2f}% is above average for a branch-format institution")
+    elif roa is not None and roa<=0:
+        concerns.append(f"Loss-making in the current period (ROA: {roa:.2f}%)")
+    if profit_chg and profit_chg>15:
+        positives.append(f"Profit growth of {profit_chg:.1f}% signals improving revenue or provision releases")
+    elif profit_chg and profit_chg<-25:
+        concerns.append(f"Profit fell {abs(profit_chg):.1f}% -- verify whether provision-driven, revenue compression, or one-off")
+    if prov_chg and prov_chg>30:
+        concerns.append(f"Provisions rose {prov_chg:.1f}% -- significant credit quality deterioration signal")
+    elif prov_chg and prov_chg<-20:
+        positives.append(f"Provision releases of {abs(prov_chg):.1f}% indicate improving credit quality")
+    if asset_chg and asset_chg>15:
+        positives.append(f"Balance sheet grew {asset_chg:.1f}% -- expansion in business volumes")
+    elif asset_chg and asset_chg<-10:
+        concerns.append(f"Total assets contracted {abs(asset_chg):.1f}% -- monitor for strategic deleveraging vs funding withdrawal")
+
+    if positives and not concerns:    tone="presents a fundamentally sound financial profile."
+    elif positives and concerns:      tone="shows a mixed but broadly stable financial profile."
+    elif concerns:                    tone="presents several indicators requiring executive attention."
+    else:                             tone="requires further qualitative context to assess."
+
+    exec_paras = []
+    p1 = f"{entity} {tone}"
+    if positives: p1 += " Key strengths: " + "; ".join(positives) + "."
+    if concerns:  p1 += " Areas requiring attention: " + "; ".join(concerns) + "."
+    exec_paras.append(p1)
+
+    if out.get("lmr_c") and out.get("cfr_c"):
+        pos_liq = "adequate headroom above regulatory thresholds on both short-term and structural liquidity" if (out["lmr_c"]>=50 and out["cfr_c"]>=100) else "a tighter liquidity profile that warrants monitoring"
+        exec_paras.append(
+            f"On liquidity: the LMR of {out['lmr_c']:.1f}% reflects {out['lmr_reason']}. "
+            f"The movement was most likely caused by {out['lmr_cause']}. "
+            f"Structurally, {out['cfr_meaning']} "
+            f"Together, these ratios indicate {entity} has {pos_liq}.")
+    if out.get("a_analysis"):
+        exec_paras.append(f"On balance sheet composition: {out['a_analysis']}")
+    if out.get("credit_sent"):
+        exec_paras.append(f"On credit quality: {out['credit_sent']}")
+    if profit_chg is not None:
+        if abs(profit_chg)>50:
+            exec_paras.append(f"Profitability: profit {'surged' if profit_chg>0 else 'collapsed'} {abs(profit_chg):.0f}% -- verify whether driven by operating leverage, provision releases, or one-off items.")
+        elif abs(profit_chg)>15:
+            exec_paras.append(f"Profitability: profit {'grew' if profit_chg>0 else 'fell'} {abs(profit_chg):.0f}%. Monitor the provisions trend as the leading credit quality indicator.")
+        else:
+            exec_paras.append(f"Profitability: profit is broadly stable ({profit_chg:+.1f}%). Earnings quality depends on the provisions trajectory and revenue mix.")
+
+    actions = []
+    if any("provision" in c.lower() for c in concerns):
+        actions.append("request a detailed provision breakdown by sector and counterparty")
+    if any("cfr" in c.lower() for c in concerns):
+        actions.append("review the maturity ladder and confirm funding rollover commitments for the next 6-12 months")
+    if any("lmr" in c.lower() for c in concerns):
+        actions.append("monitor daily liquidity positions against the internal LMR trigger level")
+    if any("profit" in c.lower() or "loss" in c.lower() for c in concerns):
+        actions.append("obtain a prior-to-current period profit bridge to isolate non-recurring items")
+    if actions:
+        exec_paras.append("Recommended executive actions: " + "; ".join(actions) + ".")
+
+    exec_html = "".join(f"<p>{p}</p>" for p in exec_paras)
+
+    out.update(exec_html=exec_html,roa=roa,roa_p=roa_p,profit_chg=profit_chg,
+               tc_c=tc_c,tc_p=tc_p,tl_c=tl_c,tl_p=tl_p,pr_c=pr_c,pr_p=pr_p,
+               spec_c=spec[0] if spec else None, spec_p=spec[1] if spec else None,
+               coll_c=coll[0] if coll else None, coll_p=coll[1] if coll else None,
+               tot_prov_c=tot_prov_c,tot_prov_p=tot_prov_p,prov_chg=prov_chg)
+    return out
+
+# ── RENDER HELPERS ─────────────────────────────────────────────────────────────
+
+BAR_COLORS = ["#E60028","#1A1A1A","#6B6B6B","#BFBFBF","#D9D9D9","#E8E8E8"]
+
+def render_bar(items, total, title):
+    if not items or not total:
+        st.markdown('<div class="neutral-box">Breakdown not available for this filing.</div>', unsafe_allow_html=True)
+        return
+    top  = sorted(items, key=lambda x:x["curr"], reverse=True)[:8]
+    maxv = top[0]["curr"] if top else 1
+    rows = ""
+    for i,x in enumerate(top):
+        pct = x["curr"]/total*100 if total else 0
+        w   = x["curr"]/maxv*100
+        col = BAR_COLORS[i % len(BAR_COLORS)]
+        rows += (f'<div class="bar-row">'
+                 f'<div class="bar-lrow"><span>{x["label"][:38]}</span>'
+                 f'<span style="font-weight:700;">{pct:.1f}%</span></div>'
+                 f'<div class="bar-track"><div class="bar-fill" style="width:{w:.1f}%;background:{col};"></div></div>'
+                 f'</div>')
+    st.markdown(f'<div class="bar-wrap"><div class="bar-title">{title}</div>{rows}</div>', unsafe_allow_html=True)
+
+def conc_block(items, total, mult, ul, label):
+    if not items or not total:
+        st.markdown('<div class="neutral-box">Not extractable from this filing.</div>', unsafe_allow_html=True); return
+    rows = ""
+    for i,x in enumerate(items[:3],1):
+        pct = x["curr"]/total*100 if total else 0
+        rows += (f'<div class="conc-item">'
+                 f'<span class="ci-rank">{i}</span>'
+                 f'<span class="ci-name">{x["label"]}</span>'
+                 f'<span class="ci-pct">{pct:.2f}%</span>'
+                 f'<span class="ci-val">{ul} {fmt_snapshot(x["curr"],mult)}</span>'
+                 f'</div>')
+    st.markdown(f'<div class="conc-wrap"><div class="conc-head">{label}</div>{rows}</div>', unsafe_allow_html=True)
+
+def conc_block_prior(items, total_p, mult, ul, label):
+    if not items or not total_p:
+        st.markdown('<div class="neutral-box">Prior period data not available.</div>', unsafe_allow_html=True); return
+    prior_sorted = sorted([x for x in items if x.get("prior")], key=lambda x:x["prior"], reverse=True)[:3]
+    if not prior_sorted:
+        st.markdown('<div class="neutral-box">Prior period data not available.</div>', unsafe_allow_html=True); return
+    rows = ""
+    for i,x in enumerate(prior_sorted,1):
+        pct = x["prior"]/total_p*100 if total_p else 0
+        rows += (f'<div class="conc-item">'
+                 f'<span class="ci-rank">{i}</span>'
+                 f'<span class="ci-name">{x["label"]}</span>'
+                 f'<span class="ci-pct">{pct:.2f}%</span>'
+                 f'<span class="ci-val">{ul} {fmt_snapshot(x["prior"],mult)}</span>'
+                 f'</div>')
+    st.markdown(f'<div class="conc-wrap"><div class="conc-head">{label}</div>{rows}</div>', unsafe_allow_html=True)
+
+def trow(label, c, p, bold=False):
+    chg = pct_chg(c,p)
+    cls = ' class="brow"' if bold else ""
+    return (f"<tr{cls}><td>{label}</td>"
+            f'<td class="nr">{fmt_n(c)}</td>'
+            f'<td class="nr">{fmt_n(p)}</td>'
+            f'<td class="nr">{fmt_chg(chg)}</td></tr>')
+
+def prow(label, c, p):
+    d  = None if (c is None or p is None) else c-p
+    cs = f"{c:.2f}%" if c is not None else "--"
+    ps = f"{p:.2f}%" if p is not None else "--"
+    ds = pp_html(d) if d is not None else "--"
+    return (f"<tr><td>{label}</td>"
+            f'<td class="nr">{cs}</td>'
+            f'<td class="nr">{ps}</td>'
+            f'<td class="nr">{ds}</td></tr>')
+
+def full_table_rows(items, tc, tp):
+    rows = ""
+    for x in items:
+        c = x["curr"]; p = x.get("prior")
+        pct_c = f"{c/tc*100:.1f}%" if (c and tc) else "--"
+        pct_p = f"{p/tp*100:.1f}%" if (p and tp) else "--"
+        rows += (f"<tr><td>{x['label']}</td>"
+                 f'<td class="nr">{pct_c}</td>'
+                 f'<td class="nr">{fmt_n(c)}</td>'
+                 f'<td class="nr">{pct_p}</td>'
+                 f'<td class="nr">{fmt_n(p)}</td></tr>')
+    return rows or "<tr><td colspan='5'>No items extracted.</td></tr>"
+
+# ── HTML REPORT BUILDER ────────────────────────────────────────────────────────
+
+def build_html_report(d, ana, filename, ul, mult):
+    entity = d["entity"] or filename
+    period = d["period"] or ""
+    desc   = d["desc"]   or ""
+    ai     = ana.get("ai_sorted", [])
+    li     = ana.get("li_sorted", [])
+    tc_c   = ana["tc_c"]; tc_p = ana["tc_p"]
+    tl_c   = ana["tl_c"]; tl_p = ana["tl_p"]
+    lc=ana.get("lmr_c"); lp=ana.get("lmr_p"); ld=ana.get("lmr_diff")
+    cc=ana.get("cfr_c"); cp=ana.get("cfr_p"); cd=ana.get("cfr_diff")
+
+    def conc_li(items, total, key="curr"):
+        out = ""
+        tot = tc_c if key=="curr" else tc_p
+        for i,x in enumerate(items[:3],1):
+            v = x.get(key)
+            if v is None: continue
+            pct = v/tot*100 if tot else 0
+            out += f"<li><strong>{i}. {x['label']}</strong> -- {pct:.2f}% of total assets | {ul} {fmt_snapshot(v,mult)}</li>"
+        return out or "<li>Not extractable.</li>"
+
+    def conc_li_l(items, total, key="curr"):
+        out = ""
+        tot = tl_c if key=="curr" else tl_p
+        for i,x in enumerate(items[:3],1):
+            v = x.get(key)
+            if v is None: continue
+            pct = v/tot*100 if tot else 0
+            out += f"<li><strong>{i}. {x['label']}</strong> -- {pct:.2f}% of total liabilities | {ul} {fmt_snapshot(v,mult)}</li>"
+        return out or "<li>Not extractable.</li>"
+
+    def full_tbl(items, tc, tp):
+        rows=""
         for x in items:
-            val=x.get("prior") if is_prior else x["curr"]
-            tot=total_p if is_prior else total_c
-            pct=round(val/tot*100,2) if val and tot else None
-            html+=f"""<div class="bullet"><span class="arrow">↠</span>
-              <span class="bullet-name">{x['label']}</span>
-              <span class="bullet-pct">{"n/a" if pct is None else f"{pct:.2f}%"} of total {s}</span>
-              <span class="bullet-unit">({ul}: {fmt_n(val)})</span></div>"""
-        return html
+            c=x["curr"]; p=x.get("prior")
+            pc=f"{c/tc*100:.1f}%" if (c and tc) else "--"
+            pp2=f"{p/tp*100:.1f}%" if (p and tp) else "--"
+            chg=pct_chg(c,p); chg_s=f"{chg:+.1f}%" if chg is not None else "--"
+            rows+=(f"<tr><td>{x['label']}</td>"
+                   f"<td class='r'>{pc}</td><td class='r'>{fmt_n(c)}</td>"
+                   f"<td class='r'>{pp2}</td><td class='r'>{fmt_n(p)}</td>"
+                   f"<td class='r'>{chg_s}</td></tr>")
+        return rows or "<tr><td colspan='6'>No data.</td></tr>"
 
-    sn=entity.split()[0] if entity else "The branch"
-    lmr_pp=round(lmr[0]-lmr[1],2) if lmr else None
-    cfr_pp=round(cfr[0]-cfr[1],2) if cfr else None
-    lmr_text=(f"The LMR {dir_word(lmr[0],lmr[1])} from {lmr[1]:.2f}% to {lmr[0]:.2f}%, a change of "
-              f"{'+'if lmr_pp and lmr_pp>0 else ''}{lmr_pp:.2f}pp. {sn} holds sufficient liquid assets "
-              f"to cover approximately {lmr[0]:.0f}% of its liabilities maturing within one month. "
-              f"The LMR remains well above the regulatory minimum of 25%.") if lmr else "LMR data not found."
-    cfr_text=(f"The CFR {dir_word(cfr[0],cfr[1])} from {cfr[1]:.2f}% to {cfr[0]:.2f}%, a change of "
-              f"{'+'if cfr_pp and cfr_pp>0 else ''}{cfr_pp:.2f}pp. "
-              f"Stable funding sources adequately cover required stable funding needs. "
-              f"The CFR remains well above the regulatory minimum of 75%.") if cfr else "CFR not disclosed by this institution."
-    liq_min=round(min(lmr[0],cfr[0]),0) if lmr and cfr else (lmr[0] if lmr else None)
-    liq_s=(f"In terms of liquidity, {sn} is above regulatory requirements. "
-           f"The LMR stands at {liq_min:.0f}%, demonstrating a strong liquidity buffer.") if liq_min else ""
+    ft=""
+    for lbl,cv,pv,bold in [
+        ("Profit after taxation",   ana["pr_c"],       ana["pr_p"],       True),
+        ("Return on assets (%)",    ana["roa"],        ana["roa_p"],      False),
+        ("Total assets",            tc_c,              tc_p,              True),
+        ("Total liabilities",       tl_c,              tl_p,              False),
+        ("Specific provisions",     ana["spec_c"],     ana["spec_p"],     False),
+        ("Collective provisions",   ana["coll_c"],     ana["coll_p"],     False),
+        ("Total provisions",        ana["tot_prov_c"], ana["tot_prov_p"], True),
+    ]:
+        chg=pct_chg(cv,pv); chg_s=f"{chg:+.1f}%" if chg is not None else "--"
+        vc=f"{cv:.4f}" if "%" in lbl and cv else fmt_n(cv)
+        vp=f"{pv:.4f}" if "%" in lbl and pv else fmt_n(pv)
+        b="<strong>" if bold else ""; be="</strong>" if bold else ""
+        ft+=(f"<tr><td>{b}{lbl}{be}</td><td class='r'>{b}{vc}{be}</td>"
+             f"<td class='r'>{b}{vp}{be}</td><td class='r'>{chg_s}</td></tr>")
 
-    def kfr(label,pair):
-        if not pair: return f'<tr><td>{label}</td><td class="num muted">—</td><td class="num muted">—</td><td class="num muted">—</td></tr>'
-        c,p=pair[0],pair[1]; ch=pct_chg(c,p)
-        chs=(f"{'+'if ch and ch>0 else ''}{ch:.2f}%") if ch is not None else "—"
-        css="pos" if ch and ch>0 else ("neg" if ch and ch<0 else "")
-        return f'<tr><td>{label}</td><td class="num">{fmt_n(c)}</td><td class="num">{fmt_n(p)}</td><td class="num {css}">{chs}</td></tr>'
+    lmr_html=""
+    if lc:
+        lp_s=f"{lp:.2f}%" if lp else "--"; ld_s=f"{ld:+.2f}pp" if ld is not None else "--"
+        lmr_html=(f"<p><strong>3-Month Average LMR: {lc:.2f}% (current) / {lp_s} (prior)</strong></p>"
+                  f"<ul>"
+                  f"<li>The LMR {ana['lmr_direction']} from {lp_s} to {lc:.2f}% ({ld_s})</li>"
+                  f"<li>{entity} holds enough liquid assets to cover approximately {lc:.0f}% of liabilities due within one month</li>"
+                  f"<li>Reason for change: {ana['lmr_reason']}</li>"
+                  f"<li>Most likely caused by: {ana['lmr_cause']}</li>"
+                  f"<li>The LMR remains {'well above' if lc>=50 else 'above'} the 25% regulatory minimum</li>"
+                  f"</ul>")
+    cfr_html=""
+    if cc:
+        cp_s=f"{cp:.2f}%" if cp else "--"; cd_s=f"{cd:+.2f}pp" if cd is not None else "--"
+        cfr_html=(f"<p><strong>3-Month Average CFR: {cc:.2f}% (current) / {cp_s} (prior)</strong></p>"
+                  f"<ul>"
+                  f"<li>The CFR {ana['cfr_dir']}, going from {cp_s} to {cc:.2f}% ({cd_s})</li>"
+                  f"<li>{ana['cfr_meaning']}</li>"
+                  f"<li>CFR remains {'well above' if cc>=100 else 'above'} the 75% regulatory minimum</li>"
+                  f"</ul>")
+    liq_summary=""
+    if lc and cc:
+        liq_summary=(f"<p>In terms of liquidity, {entity} is "
+                     f"{'above average on both ratios' if (lc>=100 and cc>=100) else 'within regulatory bounds on both ratios'} "
+                     f"and is able to cover over {lc:.0f}% of its one-month liabilities.</p>")
 
-    a_same=set(x["label"] for x in ai3)==set(x["label"] for x in ai_p)
-    a_cc=sum(x["curr"] for x in ai3 if x["curr"]); a_cp=sum(x.get("prior",0) or 0 for x in ai3)
-    a_pc=round(a_cc/tc_c*100,2) if tc_c else None; a_pp=round(a_cp/tc_p*100,2) if tc_p else None
-    a_tp=round(ai3[0]["curr"]/tc_c*100,2) if ai3 and tc_c else None
-    a_com=(f"The top 3 biggest assets {'remain the same' if a_same else 'differ'} between the two periods. "
-           f"Combined concentration {conc_word(a_pc,a_pp)}, from {a_pp:.2f}% to {a_pc:.2f}% of total assets. "
-           f"The largest asset, {ai3[0]['label'] if ai3 else 'n/a'}, represents {a_tp:.2f}% of total assets.") if ai3 and tc_c and tc_p else ""
-    a_take=(f"Key takeaway: {ai3[0]['label'] if ai3 else 'Primary asset'} dominates at {a_tp:.2f}% of total assets. "
-            f"{'High concentration in top 3.' if a_pc and a_pc>80 else 'Moderate asset diversification.'}") if a_tp else ""
+    prior_ai = sorted([x for x in ai if x.get("prior")], key=lambda x:x["prior"], reverse=True)
 
-    l_same=set(x["label"] for x in li3)==set(x["label"] for x in li_p)
-    l_cc=sum(x["curr"] for x in li3 if x["curr"]); l_cp=sum(x.get("prior",0) or 0 for x in li3)
-    l_pc=round(l_cc/tl_c*100,2) if tl_c else None; l_pp=round(l_cp/tl_p*100,2) if tl_p else None
-    l_tp=round(li3[0]["curr"]/tl_c*100,2) if li3 and tl_c else None
-    l_mv=[]
-    for x in li3:
-        if x["curr"] and x.get("prior") and tl_c and tl_p:
-            d=round(x["curr"]/tl_c*100-x["prior"]/tl_p*100,2)
-            l_mv.append((x["label"],d,x["curr"]-x["prior"]))
-    l_mv.sort(key=lambda x:abs(x[1]),reverse=True)
-    bm=l_mv[0] if l_mv else None
-    l_com=(f"The top 3 biggest liabilities {'remain the same' if l_same else 'changed'} from the prior period. "
-           f"Combined concentration {conc_word(l_pc,l_pp)}, from {l_pp:.2f}% to {l_pc:.2f}% of total liabilities."
-           +(f" Most notable shift: {bm[0]}, {'increased' if bm[1]>0 else 'decreased'} by {abs(bm[1]):.2f}pp "
-             f"({fmt_n(abs(bm[2]))} {ul})." if bm else "")) if li3 and tl_c and tl_p else ""
-    l_take=(f"Key takeaway: {li3[0]['label'] if li3 else 'Primary liability'} is dominant at {l_tp:.2f}% of total liabilities. "
-            f"{'High liability concentration in top 3.' if l_pc and l_pc>70 else 'Reasonably diversified funding.'}") if l_tp else ""
-
-    pc=pct_chg(prof[0],prof[1]) if prof else None
-    summary=(f"{entity} reported profit after taxation of {fmt_n(prof[0])} {ul} for the period, "
-             f"{'up' if pc and pc>0 else 'down'} {abs(pc):.2f}% versus the prior period. "
-             f"Total assets {'grew' if ta and ta[0]>ta[1] else 'contracted'} to {fmt_n(ta[0])} {ul}. "
-             f"Liquidity ratios remain comfortably above regulatory minimums.") if prof and ta else ""
-    overall=(f"{'Strong' if pc and pc>0 else 'Resilient'} performance with robust liquidity buffers. "
-             f"Monitor concentration in {ai3[0]['label'] if ai3 else 'primary asset'} as the dominant balance sheet item.") if ai3 else ""
-    today=datetime.date.today().strftime("%d %B %Y")
-
-    return f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<title>{entity} — HKMA Disclosure Report</title>
+    return f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>{entity} -- HKMA Disclosure Analysis</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:'DM Sans',sans-serif;background:#fff;color:#111;font-size:10pt;line-height:1.6;max-width:780px;margin:0 auto;padding:40px 48px;}}
-@media print{{body{{padding:20px 28px;}}@page{{margin:20mm;}}}}
-.doc-header{{border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:8px;}}
-.doc-bank{{font-size:1.5rem;font-weight:700;letter-spacing:-.01em;line-height:1.1;margin-bottom:3px;}}
-.doc-sub{{font-size:.72rem;color:#999;}} .doc-meta{{font-size:.68rem;color:#bbb;margin-top:4px;}}
-.unit-tag{{display:inline-block;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-           color:#E60028;border:1px solid #E60028;padding:1px 7px;margin:8px 0 18px;}}
-.desc{{border-left:3px solid #E60028;padding:8px 14px;background:#fafafa;margin-bottom:24px;font-size:.8rem;color:#444;line-height:1.7;}}
-h2{{font-size:.62rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#555;border-bottom:1px solid #eee;padding-bottom:4px;margin-top:32px;margin-bottom:12px;}}
-.narrative{{font-size:.82rem;color:#333;line-height:1.7;margin-bottom:8px;}}
-.takeaway{{font-size:.78rem;color:#555;font-style:italic;border-left:2px solid #E60028;padding-left:10px;margin:10px 0 16px;}}
-table{{width:100%;border-collapse:collapse;font-size:.78rem;margin:8px 0 18px;}}
-thead tr{{border-bottom:2px solid #111;}}
-th{{font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:0 10px 7px;text-align:right;}}
-th:first-child{{text-align:left;}}
-td{{padding:7px 10px;border-bottom:1px solid #f0f0f0;color:#222;text-align:right;}}
-td:first-child{{text-align:left;font-weight:500;color:#111;}}
+body{{font-family:'Raleway',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:13px;line-height:1.65;}}
+.page{{max-width:900px;margin:30px auto;padding:0 24px 48px;}}
+h1{{font-size:20px;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}}
+.meta{{font-size:11px;color:#6B6B6B;margin-bottom:6px;}}
+.banner{{border-left:5px solid #E60028;padding:14px 18px;background:#F7F7F7;margin-bottom:22px;}}
+.desc{{font-size:12.5px;margin-top:8px;color:#1A1A1A;}}
+.sec{{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+      color:#E60028;border-bottom:1px solid #E60028;padding-bottom:4px;margin:28px 0 14px;}}
+table{{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px;}}
+th{{background:#1A1A1A;color:#fff;padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}}
+td{{padding:6px 10px;border-bottom:1px solid #eee;}}
 tr:last-child td{{border-bottom:none;}}
-.num{{font-variant-numeric:tabular-nums;}} .pos{{color:#1a7a3a;font-weight:600;}} .neg{{color:#E60028;font-weight:600;}} .muted{{color:#bbb;}}
-.period-label{{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#aaa;margin:14px 0 6px;}}
-.bullet{{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:.8rem;}}
-.bullet:last-child{{border-bottom:none;}}
-.arrow{{color:#E60028;font-weight:700;min-width:14px;}} .bullet-name{{font-weight:600;color:#111;flex:1;}}
-.bullet-pct{{font-weight:700;color:#111;min-width:90px;text-align:right;}} .bullet-unit{{color:#bbb;font-size:.72rem;min-width:140px;text-align:right;}}
-.doc-footer{{margin-top:48px;padding-top:12px;border-top:1px solid #eee;font-size:.62rem;color:#bbb;display:flex;justify-content:space-between;}}
-.red{{color:#E60028;}} hr{{border:none;border-top:1px solid #eee;margin:28px 0 0;}}
-</style></head><body>
-<div class="doc-header">
-  <div class="doc-bank">{entity}</div>
-  <div class="doc-sub">HKMA Key Financial Information Disclosure Statement</div>
-  <div class="doc-meta">{period} &nbsp;·&nbsp; Generated {today}</div>
+tr:hover td{{background:#F7F7F7;}}
+.r{{text-align:right;font-family:'Courier New',monospace;}}
+.box{{background:#F7F7F7;border-left:3px solid #E60028;padding:12px 16px;margin:10px 0 14px;font-size:12.5px;line-height:1.7;}}
+.box ul{{padding-left:18px;margin:6px 0 0;}}.box li{{margin-bottom:4px;}}
+.abox{{background:#fff;border-top:2px solid #E60028;border-bottom:1px solid #eee;padding:14px 18px;margin:8px 0 18px;font-size:12.5px;line-height:1.75;}}
+.abox .ah{{font-size:9px;font-weight:700;color:#E60028;letter-spacing:2px;text-transform:uppercase;margin-bottom:9px;}}
+.abox p{{margin-bottom:8px;}}.abox p:last-child{{margin-bottom:0;}}
+.abox ul{{padding-left:18px;margin-bottom:8px;}}.abox li{{margin-bottom:4px;}}
+@media print{{body{{font-size:11px;}}.page{{margin:0;padding:20px;}}table{{break-inside:avoid;}}.abox{{break-inside:avoid;}}}}
+</style></head><body><div class="page">
+<div class="banner">
+  <h1>{entity}</h1>
+  <div class="meta">{period} | Figures in {ul}</div>
+  {"<div class='desc'>"+desc+"</div>" if desc else ""}
 </div>
-<div class="unit-tag">Reported in {ul} &nbsp;·&nbsp; Snapshot figures in HKD billions</div>
-{"<div class='desc'>" + desc + "</div>" if desc else ""}
-<h2>Liquidity Ratios</h2>
-<p class="narrative"><strong>3-Month LMR:</strong> <span style="color:#E60028">{f"{lmr[0]:.2f}%" if lmr else "—"}</span> (current) &nbsp;/&nbsp; {f"{lmr[1]:.2f}%" if lmr else "—"} (prior)</p>
-<p class="narrative">{lmr_text}</p>
-<p class="narrative" style="margin-top:12px"><strong>3-Month CFR:</strong> <span style="color:#E60028">{f"{cfr[0]:.2f}%" if cfr else "—"}</span> (current) &nbsp;/&nbsp; {f"{cfr[1]:.2f}%" if cfr else "—"} (prior)</p>
-<p class="narrative">{cfr_text}</p>
-{"<p class='narrative' style='margin-top:12px'>" + liq_s + "</p>" if liq_s else ""}
-<h2>Key Financials</h2>
-<table><thead><tr><th>Item</th><th>Current ({ul})</th><th>Prior ({ul})</th><th>Change</th></tr></thead>
-<tbody>
-{kfr("Profit after taxation",prof)}{kfr("Total assets",ta)}{kfr("Total liabilities",tl)}
-{kfr("Specific / Individual provisions",spec)}{kfr("Collective provisions",coll)}{kfr("Total provisions",tot_prov)}
-</tbody></table>
-<h2>Asset Concentration</h2>
-<div class="period-label">Current period — top 3 assets</div>{bullets(ai3,tc_c,tc_p,is_prior=False,is_liab=False)}
-<div class="period-label" style="margin-top:14px">Prior period — top 3 assets</div>{bullets(ai_p or ai3,tc_c,tc_p,is_prior=True,is_liab=False)}
-<p class="narrative" style="margin-top:12px">{a_com}</p><p class="takeaway">{a_take}</p>
-<h2>Liability Concentration</h2>
-<div class="period-label">Current period — top 3 liabilities</div>{bullets(li3,tl_c,tl_p,is_prior=False,is_liab=True)}
-<div class="period-label" style="margin-top:14px">Prior period — top 3 liabilities</div>{bullets(li_p or li3,tl_c,tl_p,is_prior=True,is_liab=True)}
-<p class="narrative" style="margin-top:12px">{l_com}</p><p class="takeaway">{l_take}</p>
-<hr><h2>Summary</h2>
-<p class="narrative">{summary}</p><p class="takeaway">{overall}</p>
-<div class="doc-footer">
-  <span>Source: HKMA Key Financial Information Disclosure Statement</span>
-  <span>Generated by <span class="red">HKMA Disclosure Reader</span> · {today}</span>
+<div class="sec">Main Takeaway -- Executive Assessment</div>
+<div class="abox"><div class="ah">What Executives Need to Know</div>
+{ana.get("exec_html","<p>Analysis not available.</p>")}
+</div>
+<div class="sec">3-Month Liquidity Ratios</div>
+<div class="box">{lmr_html}{cfr_html}{liq_summary}</div>
+<div class="sec">Financial Summary</div>
+<table><thead><tr>
+<th style="width:36%">Item</th>
+<th class="r" style="width:20%">'25 ({ul})</th>
+<th class="r" style="width:20%">'24 ({ul})</th>
+<th class="r" style="width:24%">Change</th>
+</tr></thead><tbody>{ft}</tbody></table>
+<div class="sec">Asset Quality and Credit Risk</div>
+<div class="abox"><div class="ah">Credit Risk Assessment</div>
+<p>{ana.get("credit_sent","Provision data not found in this filing.")}</p></div>
+<div class="sec">Asset Concentration -- Current Period</div>
+<div class="box"><ul>{conc_li(ai,tc_c,"curr")}</ul></div>
+<div class="sec">Asset Concentration -- Prior Period</div>
+<div class="box"><ul>{conc_li(prior_ai,tc_p,"prior")}</ul></div>
+<div class="abox"><div class="ah">Asset Concentration Trend</div>
+<p>{ana.get("a_comp_sent","")}</p></div>
+<div class="sec">Full Asset Concentration Table</div>
+<table><thead><tr>
+<th>Item</th><th class="r">% Curr</th><th class="r">Curr</th>
+<th class="r">% Prior</th><th class="r">Prior</th><th class="r">Change</th>
+</tr></thead><tbody>{full_tbl(ai,tc_c,tc_p)}</tbody></table>
+<div class="abox"><div class="ah">Analysis -- What This Tells You</div>
+<p>{ana.get("a_analysis","Not available.")}</p></div>
+<div class="sec">Liability Concentration -- Current Period</div>
+<div class="box"><ul>{conc_li_l(li,tl_c,"curr")}</ul></div>
+<div class="sec">Liability Concentration -- Prior Period</div>
+<div class="box"><ul>{conc_li_l(li,tl_p,"prior")}</ul></div>
+<div class="abox"><div class="ah">Liability Concentration Trend</div>
+<p>{ana.get("l_comp_sent","")}</p></div>
+<div class="sec">Full Liability Concentration Table</div>
+<table><thead><tr>
+<th>Item</th><th class="r">% Curr</th><th class="r">Curr</th>
+<th class="r">% Prior</th><th class="r">Prior</th><th class="r">Change</th>
+</tr></thead><tbody>{full_tbl(li,tl_c,tl_p)}</tbody></table>
+<div class="abox"><div class="ah">Analysis -- What This Tells You</div>
+<p>{ana.get("l_analysis","Not available.")}</p></div>
 </div></body></html>"""
 
-st.markdown("<h1>HKMA Financial Disclosure Reader</h1>",unsafe_allow_html=True)
-uploaded=st.file_uploader("Upload HKMA Key Financial Information Disclosure PDF",type="pdf")
+# ── MAIN RENDER ────────────────────────────────────────────────────────────────
 
-if not uploaded:
-    st.markdown("""
-    <div style="margin-top:40px;padding:40px;border:1px dashed #ddd;text-align:center;background:#fafafa">
-      <div style="font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#ccc;margin-bottom:6px;">Drop a disclosure PDF to begin</div>
-      <div style="font-size:.7rem;color:#ddd;">Supports JPMorgan, CA-CIB, Société Générale, Natixis, BNP Paribas, and other HKMA-format disclosures</div>
-    </div>""",unsafe_allow_html=True)
+def render(d, filename, ul, mult):
+    ana    = build_analysis(d, mult, ul)
+    entity = d["entity"] or filename
+    period = d["period"] or ""
+    desc   = d["desc"]   or ""
+    ai     = ana.get("ai_sorted", [])
+    li     = ana.get("li_sorted", [])
+    tc_c   = ana["tc_c"]; tc_p = ana["tc_p"]
+    tl_c   = ana["tl_c"]; tl_p = ana["tl_p"]
+    lc=ana.get("lmr_c"); lp=ana.get("lmr_p"); ld=ana.get("lmr_diff")
+    cc=ana.get("cfr_c"); cp=ana.get("cfr_p"); cd=ana.get("cfr_diff")
 
+    # Entity banner
+    desc_html = f'<div class="desc">{desc}</div>' if desc else ""
+    st.markdown(f'<div class="entity-banner"><h2>{entity}</h2>'
+                f'<div class="meta">{period} &nbsp;|&nbsp; Figures in {ul}</div>'
+                f'{desc_html}</div>', unsafe_allow_html=True)
+
+    # Main takeaway
+    st.markdown('<div class="sec-head">Main Takeaway</div>', unsafe_allow_html=True)
+    if ana.get("exec_html"):
+        st.markdown(f'<div class="analysis-box"><div class="ah">Executive Assessment</div>'
+                    f'{ana["exec_html"]}</div>', unsafe_allow_html=True)
+
+    # KPI strip
+    st.markdown('<div class="sec-head">Key Metrics</div>', unsafe_allow_html=True)
+    c1,c2,c3,c4 = st.columns(4)
+    def kpi(col, label, val, chg_val, is_pp=False):
+        with col:
+            v_str = f"{val:.2f}%" if (is_pp and val is not None) else (fmt_n(val) if val is not None else "--")
+            b = ""
+            if chg_val is not None:
+                cls = "chg-pos" if chg_val>0 else "chg-neg"
+                s   = "+" if chg_val>0 else ""
+                sfx = "pp" if is_pp else "%"
+                b   = f'<span class="{cls}">{s}{chg_val:.2f}{sfx}</span>'
+            st.markdown(f'<div class="kpi-card"><div class="kpi-label">{label}</div>'
+                        f'<div class="kpi-val">{v_str}</div>'
+                        f'<div class="kpi-chg">{b}&nbsp;</div></div>', unsafe_allow_html=True)
+    kpi(c1,"Total Assets",    ana["tc_c"],      pct_chg(ana["tc_c"],ana["tc_p"]))
+    kpi(c2,"Profit / (Loss)", ana["pr_c"],      pct_chg(ana["pr_c"],ana["pr_p"]))
+    kpi(c3,"Avg LMR",         lc,               ld, is_pp=True)
+    kpi(c4,"Avg CFR",         cc,               cd, is_pp=True)
+
+    # Liquidity
+    st.markdown('<div class="sec-head">Liquidity Ratios</div>', unsafe_allow_html=True)
+    if lc is not None:
+        lp_s = f"{lp:.2f}%" if lp else "--"
+        ld_s = f"{ld:+.2f}pp" if ld is not None else "--"
+        st.markdown(f'<div class="lmr-block"><div class="lmr-title">3-Month Average Liquidity Maintenance Ratio (LMR)</div>'
+                    f'<div class="lmr-vals">{lc:.2f}% (current) / {lp_s} (prior) | {ld_s}</div>'
+                    f'<ul class="lmr-bullet">'
+                    f'<li>The LMR {ana["lmr_direction"]} from {lp_s} to {lc:.2f}%</li>'
+                    f'<li>{entity} holds enough liquid assets to cover approximately {lc:.0f}% of liabilities due within one month</li>'
+                    f'<li>Reason for change: {ana["lmr_reason"]}</li>'
+                    f'<li>Most likely caused by: {ana["lmr_cause"]}</li>'
+                    f'<li>The LMR remains {"well above" if lc>=50 else "above"} the 25% regulatory minimum</li>'
+                    f'</ul></div>', unsafe_allow_html=True)
+    if cc is not None:
+        cp_s = f"{cp:.2f}%" if cp else "--"
+        cd_s = f"{cd:+.2f}pp" if cd is not None else "--"
+        st.markdown(f'<div class="lmr-block"><div class="lmr-title">3-Month Average Core Funding Ratio (CFR)</div>'
+                    f'<div class="lmr-vals">{cc:.2f}% (current) / {cp_s} (prior) | {cd_s}</div>'
+                    f'<ul class="lmr-bullet">'
+                    f'<li>The CFR {ana["cfr_dir"]}, going from {cp_s} to {cc:.2f}%</li>'
+                    f'<li>{ana["cfr_meaning"]}</li>'
+                    f'<li>CFR remains {"well above" if cc>=100 else "above"} the 75% regulatory minimum</li>'
+                    f'</ul></div>', unsafe_allow_html=True)
+    if lc and cc:
+        liq_s = (f"In terms of liquidity, {entity} is "
+                 f"{'above average on both ratios' if (lc>=100 and cc>=100) else 'within regulatory bounds on both ratios'} "
+                 f"and is able to cover over {lc:.0f}% of its one-month liabilities.")
+        st.markdown(f'<div class="neutral-box">{liq_s}</div>', unsafe_allow_html=True)
+
+    # Financial summary
+    st.markdown('<div class="sec-head">Financial Summary</div>', unsafe_allow_html=True)
+    rows = (trow("Profit after taxation",  ana["pr_c"],       ana["pr_p"],       bold=True)
+          + trow("Return on assets (%)",    ana["roa"],        ana["roa_p"])
+          + trow("Total assets",            tc_c,              tc_p,              bold=True)
+          + trow("Total liabilities",       tl_c,              tl_p)
+          + trow("Specific provisions",     ana["spec_c"],     ana["spec_p"])
+          + trow("Collective provisions",   ana["coll_c"],     ana["coll_p"])
+          + trow("Total provisions",        ana["tot_prov_c"], ana["tot_prov_p"], bold=True))
+    st.markdown(f'<table class="rep"><thead><tr>'
+                f'<th style="width:36%">Item</th>'
+                f'<th class="nr" style="width:20%">\'25 ({ul})</th>'
+                f'<th class="nr" style="width:20%">\'24 ({ul})</th>'
+                f'<th class="nr" style="width:24%">Change</th>'
+                f'</tr></thead><tbody>{rows}</tbody></table>', unsafe_allow_html=True)
+    if lc or cc:
+        rr = prow("Avg LMR",lc,lp) + prow("Avg CFR",cc,cp)
+        st.markdown(f'<table class="rep" style="margin-top:10px;"><thead><tr>'
+                    f'<th style="width:40%">Ratio</th>'
+                    f'<th class="nr">Current</th><th class="nr">Prior</th><th class="nr">Change</th>'
+                    f'</tr></thead><tbody>{rr}</tbody></table>', unsafe_allow_html=True)
+
+    # Credit risk
+    st.markdown('<div class="sec-head">Asset Quality and Credit Risk</div>', unsafe_allow_html=True)
+    if ana.get("credit_sent"):
+        st.markdown(f'<div class="analysis-box"><div class="ah">Credit Risk Assessment</div>'
+                    f'<p>{ana["credit_sent"]}</p></div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="neutral-box">Provision data not found in this filing.</div>', unsafe_allow_html=True)
+
+    # Asset concentration
+    st.markdown('<div class="sec-head">Asset Concentration</div>', unsafe_allow_html=True)
+    col1,col2 = st.columns(2)
+    with col1: conc_block(ai,  tc_c, mult, ul, f"Current -- {period[:22] if period else 'Current period'}")
+    with col2: conc_block_prior(ai, tc_p, mult, ul, "Prior period")
+    if ai and tc_c: render_bar(ai, tc_c, "Asset Composition (Current Period)")
+    if ana.get("a_comp_sent"):
+        st.markdown(f'<div class="neutral-box">{ana["a_comp_sent"]}</div>', unsafe_allow_html=True)
+    with st.expander("Full asset breakdown table"):
+        st.markdown(f'<table class="rep"><thead><tr>'
+                    f'<th>Item</th><th class="nr">% Curr</th><th class="nr">Curr ({ul})</th>'
+                    f'<th class="nr">% Prior</th><th class="nr">Prior ({ul})</th>'
+                    f'</tr></thead><tbody>{full_table_rows(ai,tc_c,tc_p)}</tbody></table>', unsafe_allow_html=True)
+    if ana.get("a_analysis"):
+        st.markdown(f'<div class="analysis-box"><div class="ah">Analysis -- What This Tells You</div>'
+                    f'<p>{ana["a_analysis"]}</p></div>', unsafe_allow_html=True)
+
+    # Liability concentration
+    st.markdown('<div class="sec-head">Liability Concentration</div>', unsafe_allow_html=True)
+    col3,col4 = st.columns(2)
+    with col3: conc_block(li,  tl_c, mult, ul, f"Current -- {period[:22] if period else 'Current period'}")
+    with col4: conc_block_prior(li, tl_p, mult, ul, "Prior period")
+    if li and tl_c: render_bar(li, tl_c, "Liability Composition (Current Period)")
+    if ana.get("l_comp_sent"):
+        st.markdown(f'<div class="neutral-box">{ana["l_comp_sent"]}</div>', unsafe_allow_html=True)
+    with st.expander("Full liability breakdown table"):
+        st.markdown(f'<table class="rep"><thead><tr>'
+                    f'<th>Item</th><th class="nr">% Curr</th><th class="nr">Curr ({ul})</th>'
+                    f'<th class="nr">% Prior</th><th class="nr">Prior ({ul})</th>'
+                    f'</tr></thead><tbody>{full_table_rows(li,tl_c,tl_p)}</tbody></table>', unsafe_allow_html=True)
+    if ana.get("l_analysis"):
+        st.markdown(f'<div class="analysis-box"><div class="ah">Analysis -- What This Tells You</div>'
+                    f'<p>{ana["l_analysis"]}</p></div>', unsafe_allow_html=True)
+
+    # Export
+    st.markdown('<div class="sec-head">Export Report</div>', unsafe_allow_html=True)
+    html_report = build_html_report(d, ana, filename, ul, mult)
+    safe        = re.sub(r"[^a-zA-Z0-9_\-]","_", entity)[:40]
+    import csv as _csv
+    buf = io.StringIO()
+    w   = _csv.writer(buf)
+    w.writerow(["Metric",f"Current ({ul})",f"Prior ({ul})","Change"])
+    for lbl,cv,pv in [
+        ("Total Assets",tc_c,tc_p),("Total Liabilities",tl_c,tl_p),
+        ("Profit after Tax",ana["pr_c"],ana["pr_p"]),("ROA (%)",ana["roa"],ana["roa_p"]),
+        ("Specific Provisions",ana["spec_c"],ana["spec_p"]),
+        ("Collective Provisions",ana["coll_c"],ana["coll_p"]),
+        ("Total Provisions",ana["tot_prov_c"],ana["tot_prov_p"]),
+        ("LMR (%)",lc,lp),("CFR (%)",cc,cp),
+    ]:
+        chg=pct_chg(cv,pv)
+        w.writerow([lbl,fmt_n(cv),fmt_n(pv),f"{chg:+.1f}%" if chg is not None else "--"])
+    ca,cb = st.columns(2)
+    with ca:
+        st.download_button("Download HTML Report  (open in browser, Ctrl+P to save as PDF)",
+                           data=html_report, file_name=f"{safe}_report.html", mime="text/html")
+    with cb:
+        st.download_button("Download CSV Data",
+                           data=buf.getvalue(), file_name=f"{safe}_data.csv", mime="text/csv")
+
+# ── UPLOAD ────────────────────────────────────────────────────────────────────
+uploaded = st.file_uploader("Upload HKMA Banking Disclosure PDF", type=["pdf"],
+                             help="Supports all standard HKMA Banking (Disclosure) Rules filings")
 if uploaded:
-    pdf_bytes=uploaded.read()
-    with st.spinner("Extracting and generating report…"):
-        d=run(pdf_bytes)
-    ul=d["unit_label"]; mult=d["multiplier"]
-    ta,tl=d["ta"],d["tl"]; spec,coll=d["spec"],d["coll"]
-    lmr,cfr=d["lmr"],d["cfr"]; prof=d["profit"]
-    ai,li=d["asset_items"],d["liab_items"]
-    entity=d["entity"] or uploaded.name.replace(".pdf","").replace("_"," ").upper()
-    desc=d["desc"] or ""; period=d["period"] or ""
-    tot_prov=None
-    if spec and coll:
-        c2=(spec[1]+coll[1]) if spec[1] and coll[1] else None; tot_prov=(spec[0]+coll[0],c2)
-    elif coll: tot_prov=coll
-    elif spec: tot_prov=spec
-
-    st.markdown(f"""
-    <div class="pg-header">
-      <div class="pg-bank">{entity}</div>
-      <div class="pg-meta">HKMA Key Financial Disclosure<br><span>{period}</span></div>
-    </div>
-    <div class="unit-tag">Reported in {ul} &nbsp;·&nbsp; Snapshot figures in HKD billions</div>
-    """,unsafe_allow_html=True)
-    if desc:
-        st.markdown(f'<div class="desc-block"><div class="desc-text">{desc}</div></div>',unsafe_allow_html=True)
-
-    def kpi_block(label,rv,rp,is_ratio=False):
-        if rv is None: return ""
-        display=f"{rv:.2f}%" if is_ratio else f"HKD {fmt_snapshot(rv,mult)}"
-        chg_html=""
-        if rp is not None:
-            chg=round(rv-rp,2) if is_ratio else pct_chg(rv,rp)
-            if chg is not None:
-                sfx="pp" if is_ratio else "%"; css="kpi-chg-pos" if chg>0 else "kpi-chg-neg"
-                chg_html=f'<div class="{css}">{"+" if chg>0 else ""}{chg:.2f}{sfx} vs prior</div>'
-        return f'<div class="kpi"><div class="kpi-label">{label}</div><div class="kpi-val">{display}</div>{chg_html}</div>'
-
-    kpis="".join(filter(None,[kpi_block("Total Assets",ta[0] if ta else None,ta[1] if ta else None),
-        kpi_block("Profit after Tax",prof[0] if prof else None,prof[1] if prof else None),
-        kpi_block("Avg LMR",lmr[0] if lmr else None,lmr[1] if lmr else None,True),
-        kpi_block("Avg CFR",cfr[0] if cfr else None,cfr[1] if cfr else None,True),
-        kpi_block("Total Provisions",tot_prov[0] if tot_prov else None,tot_prov[1] if tot_prov else None)]))
-    if kpis: st.markdown(f'<div class="snapshot">{kpis}</div>',unsafe_allow_html=True)
-
-    lpp=round(lmr[0]-lmr[1],2) if lmr else None; cpp=round(cfr[0]-cfr[1],2) if cfr else None
-    st.markdown("<h2>Liquidity</h2>",unsafe_allow_html=True)
-    st.markdown(f"""<div class="ratio-grid">
-      <div class="ratio-card"><div class="ratio-label">3-Month Average LMR</div>
-        <div><span class="ratio-main">{f"{lmr[0]:.2f}%" if lmr else "—"}</span>
-        <span class="ratio-prior">{f"prev {lmr[1]:.2f}%" if lmr else ""}</span></div>
-        <div style="margin-top:6px">{pp_html(lpp)}</div></div>
-      <div class="ratio-card"><div class="ratio-label">3-Month Average CFR</div>
-        <div><span class="ratio-main">{f"{cfr[0]:.2f}%" if cfr else "—"}</span>
-        <span class="ratio-prior">{f"prev {cfr[1]:.2f}%" if cfr else ""}</span></div>
-        <div style="margin-top:6px">{pp_html(cpp)}</div></div></div>""",unsafe_allow_html=True)
-
-    st.markdown("<h2>Key Financials</h2>",unsafe_allow_html=True)
-    kf_rows=[("Profit after taxation",prof),("Total assets",ta),("Total liabilities",tl),
-             ("Specific / Individual provisions",spec),("Collective provisions",coll),("Total provisions",tot_prov)]
-    rows_html=""
-    for label,pair in kf_rows:
-        if pair:
-            c,p=pair[0],pair[1]
-            rows_html+=f"<tr><td>{label}</td><td>{fmt_n(c)}</td><td>{fmt_n(p)}</td><td>{fmt_chg(pct_chg(c,p))}</td></tr>"
-        else:
-            rows_html+=f'<tr><td class="muted">{label}</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td></tr>'
-    st.markdown(f"""<table><thead><tr><th>Metric</th><th>Current ({ul})</th><th>Prior ({ul})</th><th>Change</th></tr></thead>
-      <tbody>{rows_html}</tbody></table>""",unsafe_allow_html=True)
-
-    def render_top3(items,total_pair,title):
-        tc=total_pair[0] if total_pair else None; tp=total_pair[1] if total_pair else None
-        valid=sorted([x for x in items if x["curr"] and x["curr"]>0],key=lambda x:x["curr"],reverse=True)[:3]
-        st.markdown(f"<h2>{title} — Top 3</h2>",unsafe_allow_html=True)
-        if not valid or not tc:
-            st.markdown('<p style="font-size:.75rem;color:#bbb">No items extracted.</p>',unsafe_allow_html=True); return
-        rows_h="".join(f"""<tr><td><span class="rank">{i}</span>{x['label']}</td>
-          <td><b>{round(x['curr']/tc*100,2):.2f}%</b></td><td class="muted">{fmt_n(x['curr'])}</td>
-          <td>{"<span class='muted'>—</span>" if not(tp and x.get('prior')) else f"{round(x['prior']/tp*100,2):.2f}%"}</td>
-          <td class="muted">{fmt_n(x.get('prior'))}</td></tr>""" for i,x in enumerate(valid,1))
-        st.markdown(f"""<table><thead><tr><th style="text-align:left">Item</th>
-          <th>Curr %</th><th>Current ({ul})</th><th>Prior %</th><th>Prior ({ul})</th></tr></thead>
-          <tbody>{rows_h}</tbody></table>""",unsafe_allow_html=True)
-
-    render_top3(ai,ta,"Asset Concentration")
-    render_top3(li,tl,"Liability Concentration")
-
-    st.markdown('<hr class="rule">',unsafe_allow_html=True)
-    st.markdown("<h2>Full Balance Sheet Breakdown</h2>",unsafe_allow_html=True)
-
-    def render_full(items,total_pair,title):
-        tc=total_pair[0] if total_pair else None; tp=total_pair[1] if total_pair else None
-        valid=sorted([x for x in items if x["curr"] is not None],key=lambda x:x["curr"],reverse=True)
-        st.markdown(f"<h3>{title}</h3>",unsafe_allow_html=True)
-        if not valid or not tc:
-            st.markdown('<p style="font-size:.75rem;color:#bbb">No items extracted.</p>',unsafe_allow_html=True); return
-        rows_h="".join(f"""<tr><td>{x['label']}</td><td>{fmt_n(x['curr'])}</td>
-          <td>{"<span class='muted'>—</span>" if not tc or not x['curr'] else f"<b>{round(x['curr']/tc*100,2):.2f}%</b>"}</td>
-          <td class="muted">{fmt_n(x.get('prior'))}</td>
-          <td>{"<span class='muted'>—</span>" if not tp or not x.get('prior') else f"{round(x['prior']/tp*100,2):.2f}%"}</td></tr>""" for x in valid)
-        st.markdown(f"""<table><thead><tr><th style="text-align:left">Item</th>
-          <th>Current ({ul})</th><th>% of Total</th><th>Prior ({ul})</th><th>% (Prior)</th></tr></thead>
-          <tbody>{rows_h}</tbody></table>""",unsafe_allow_html=True)
-
-    render_full(ai,ta,"Assets")
-    render_full(li,tl,"Liabilities")
-
-    st.markdown('<hr class="rule">',unsafe_allow_html=True)
-    st.markdown("<h2>Export</h2>",unsafe_allow_html=True)
-    report_html=generate_report_html(d,uploaded.name,ul,mult)
-    base=uploaded.name.replace(".pdf","")
-    col1,col2=st.columns(2)
-    with col1:
-        st.download_button("↓  Download Report (HTML)",data=report_html.encode("utf-8"),
-                           file_name=f"{base}_report.html",mime="text/html")
-    with col2:
-        export=[]
-        for label,pair in kf_rows:
-            if pair: export.append({"Section":"Key Financials","Item":label,"Current":pair[0],"Prior":pair[1],"Change%":pct_chg(pair[0],pair[1])})
-        if lmr: export.append({"Section":"Liquidity","Item":"Avg LMR (%)","Current":lmr[0],"Prior":lmr[1],"Change pp":lpp})
-        if cfr:  export.append({"Section":"Liquidity","Item":"Avg CFR (%)","Current":cfr[0],"Prior":cfr[1],"Change pp":cpp})
-        for x in sorted(ai,key=lambda x:x["curr"] or 0,reverse=True):
-            export.append({"Section":"Assets","Item":x["label"],"Current":x["curr"],"Prior":x.get("prior"),"% of Total":round(x["curr"]/ta[0]*100,2) if ta and x["curr"] else None})
-        for x in sorted(li,key=lambda x:x["curr"] or 0,reverse=True):
-            export.append({"Section":"Liabilities","Item":x["label"],"Current":x["curr"],"Prior":x.get("prior"),"% of Total":round(x["curr"]/tl[0]*100,2) if tl and x["curr"] else None})
-        csv=pd.DataFrame(export).to_csv(index=False).encode("utf-8")
-        st.download_button("↓  Download Raw Data (CSV)",data=csv,file_name=f"{base}_metrics.csv",mime="text/csv")
-    st.markdown('<div style="font-size:.68rem;color:#aaa;margin-top:8px;"><b>PDF:</b> open HTML in browser → Print → Save as PDF</div>',unsafe_allow_html=True)
-    with st.expander("Debug — raw extracted lines"):
-        st.text("\n".join(d["raw_lines"][:300]))
+    pdf_bytes = uploaded.read()
+    with st.spinner("Parsing PDF and building analysis..."):
+        try:
+            d    = run(pdf_bytes)
+            ul   = d["unit_label"]
+            mult = d["multiplier"]
+            render(d, uploaded.name, ul, mult)
+        except Exception as e:
+            st.error(f"Could not process this PDF. Error: {e}")
+            st.info("This filing may use a non-standard layout. Try a different PDF or contact support.")
+else:
+    st.markdown('<div class="neutral-box">Upload a PDF above to generate the analysis report.</div>',
+                unsafe_allow_html=True)
