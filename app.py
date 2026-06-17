@@ -32,59 +32,59 @@ html, body, [class*="css"] {
 }
 .pg-header { border-bottom: 3px solid #E60028; padding-bottom: 10px; margin-bottom: 24px; }
 .pg-header h1 { font-size: 1.4rem; font-weight: 700; color: #1A1A1A; margin: 0 0 3px; }
-.pg-header .sub { font-size: 0.79rem; color: #6B6B6B; margin: 0; }
+.pg-header .sub { font-size: 0.86rem; color: #6B6B6B; margin: 0; }
 .entity-banner { background: #F7F7F7; border-left: 5px solid #E60028; padding: 14px 20px; margin-bottom: 22px; }
 .entity-banner h2 { font-size: 1.15rem; font-weight: 700; color: #1A1A1A; margin: 0 0 3px; text-transform: uppercase; letter-spacing: 0.5px; }
-.entity-banner .meta { font-size: 0.78rem; color: #6B6B6B; }
-.entity-banner .desc { font-size: 0.84rem; color: #1A1A1A; margin-top: 8px; line-height: 1.6; }
-.sec-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 2.2px; text-transform: uppercase;
+.entity-banner .meta { font-size: 0.84rem; color: #6B6B6B; }
+.entity-banner .desc { font-size: 0.92rem; color: #1A1A1A; margin-top: 8px; line-height: 1.6; }
+.sec-head { font-size: 0.68rem; font-weight: 700; letter-spacing: 2.2px; text-transform: uppercase;
     color: #E60028; border-bottom: 1px solid #E60028; padding-bottom: 5px; margin: 28px 0 14px; }
 .kpi-card { flex: 1; min-width: 130px; background: #FFFFFF;
     border: 1px solid #E8E8E8; border-top: 3px solid #E60028; padding: 13px 16px; }
-.kpi-label { font-size: 0.59rem; font-weight: 700; color: #6B6B6B;
+.kpi-label { font-size: 0.68rem; font-weight: 700; color: #6B6B6B;
     letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5px; }
-.kpi-val { font-size: 1.25rem; font-weight: 700; color: #1A1A1A; line-height: 1.2; }
-.kpi-chg { font-size: 0.71rem; margin-top: 3px; }
+.kpi-val { font-size: 1.35rem; font-weight: 700; color: #1A1A1A; line-height: 1.2; }
+.kpi-chg { font-size: 0.78rem; margin-top: 3px; }
 .chg-pos { color: #E60028; font-weight: 700; }
 .chg-neg { color: #1A1A1A; font-weight: 700; }
 .neutral-box { background: #F7F7F7; border-left: 3px solid #CCCCCC;
-    padding: 11px 16px; font-size: 0.84rem; color: #1A1A1A; margin: 8px 0 12px; line-height: 1.65; }
+    padding: 11px 16px; font-size: 0.92rem; color: #1A1A1A; margin: 8px 0 12px; line-height: 1.65; }
 .analysis-box { background: #FFFFFF; border-top: 2px solid #E60028;
     border-bottom: 1px solid #E8E8E8; padding: 16px 20px; margin: 8px 0 18px; }
-.analysis-box .ah { font-size: 0.59rem; font-weight: 700; color: #E60028;
+.analysis-box .ah { font-size: 0.68rem; font-weight: 700; color: #E60028;
     letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-.analysis-box p { font-size: 0.85rem; color: #1A1A1A; line-height: 1.75; margin: 0 0 9px; }
+.analysis-box p { font-size: 0.93rem; color: #1A1A1A; line-height: 1.75; margin: 0 0 9px; }
 .analysis-box p:last-child { margin-bottom: 0; }
-table.rep { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 4px; }
+table.rep { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 4px; }
 table.rep th { background: #1A1A1A; color: #FFFFFF; padding: 8px 12px; text-align: left;
-    font-size: 0.63rem; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; }
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; }
 table.rep td { padding: 7px 12px; border-bottom: 1px solid #EEEEEE; color: #1A1A1A; }
 table.rep tr:last-child td { border-bottom: none; }
 table.rep tr:hover td { background: #F7F7F7; }
 .nr { text-align: right !important; font-variant-numeric: tabular-nums; }
 .brow td { font-weight: 700 !important; background: #F7F7F7 !important; }
 .conc-wrap { background: #FFFFFF; border: 1px solid #E8E8E8; border-top: 2px solid #E60028; padding: 14px 18px; margin-bottom: 10px; }
-.conc-head { font-size: 0.59rem; font-weight: 700; color: #6B6B6B;
+.conc-head { font-size: 0.68rem; font-weight: 700; color: #6B6B6B;
     letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 10px; }
 .conc-item { display: flex; align-items: center; gap: 10px; padding: 6px 0;
-    border-bottom: 1px solid #F2F2F2; font-size: 0.82rem; }
+    border-bottom: 1px solid #F2F2F2; font-size: 0.88rem; }
 .conc-item:last-child { border-bottom: none; }
 .ci-rank { color: #E60028; font-weight: 700; min-width: 18px; }
 .ci-name { flex: 1; color: #1A1A1A; }
 .ci-pct { font-weight: 700; color: #E60028; min-width: 52px; text-align: right; }
-.ci-val { font-size: 0.74rem; color: #6B6B6B; min-width: 95px; text-align: right; }
+.ci-val { font-size: 0.80rem; color: #6B6B6B; min-width: 95px; text-align: right; }
 .bar-wrap { background: #FFFFFF; border: 1px solid #E8E8E8; padding: 16px 18px; margin: 10px 0; }
-.bar-title { font-size: 0.63rem; font-weight: 700; color: #6B6B6B;
+.bar-title { font-size: 0.72rem; font-weight: 700; color: #6B6B6B;
     letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 13px; }
 .bar-row { margin-bottom: 9px; }
 .bar-lrow { display: flex; justify-content: space-between; font-size: 0.75rem; color: #1A1A1A; margin-bottom: 3px; }
 .bar-track { background: #F0F0F0; height: 10px; border-radius: 2px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 2px; }
 .lmr-block { background: #FFFFFF; border: 1px solid #E8E8E8; border-left: 4px solid #E60028; padding: 14px 18px; margin-bottom: 10px; }
-.lmr-title { font-size: 0.63rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #E60028; margin-bottom: 8px; }
+.lmr-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #E60028; margin-bottom: 8px; }
 .lmr-vals { font-size: 1.05rem; font-weight: 700; color: #1A1A1A; margin-bottom: 8px; }
 .lmr-bullet { padding-left: 0; margin: 0; }
-.lmr-bullet li { list-style: none; font-size: 0.83rem; color: #1A1A1A; line-height: 1.7;
+.lmr-bullet li { list-style: none; font-size: 0.91rem; color: #1A1A1A; line-height: 1.7;
     margin-bottom: 3px; padding-left: 14px; position: relative; }
 .lmr-bullet li::before { content: "--"; color: #E60028; font-weight: 700; margin-right: 6px; position: absolute; left: 0; }
 </style>
@@ -745,7 +745,7 @@ def render_bar(items, total, title):
         for lbl, pct, col in segments
     )
     legend = "".join(
-        f'<span style="display:inline-flex;align-items:center;gap:5px;margin:3px 12px 3px 0;font-size:0.72rem;">'
+        f'<span style="display:inline-flex;align-items:center;gap:5px;margin:3px 12px 3px 0;font-size:0.80rem;">'
         f'<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:{col};flex-shrink:0;"></span>'
         f'<span style="color:#1A1A1A;">{lbl}</span>'
         f'<span style="font-weight:700;color:{col};">{pct:.1f}%</span></span>'
@@ -921,27 +921,27 @@ def build_html_report(d, ana, filename, ul, mult):
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow:wght@300;400;500;600;700&display=swap');
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:13px;line-height:1.65;}}
+body{{font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:15px;line-height:1.65;}}
 .page{{max-width:900px;margin:30px auto;padding:0 24px 48px;}}
 h1{{font-size:20px;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}}
-.meta{{font-size:11px;color:#6B6B6B;margin-bottom:6px;}}
+.meta{{font-size:12px;color:#6B6B6B;margin-bottom:6px;}}
 .banner{{border-left:5px solid #E60028;padding:14px 18px;background:#F7F7F7;margin-bottom:22px;}}
-.desc{{font-size:12.5px;margin-top:8px;color:#1A1A1A;}}
-.sec{{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+.desc{{font-size:13.5px;margin-top:8px;color:#1A1A1A;}}
+.sec{{font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
       color:#E60028;border-bottom:1px solid #E60028;padding-bottom:4px;margin:28px 0 14px;}}
-table{{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px;}}
-th{{background:#1A1A1A;color:#fff;padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}}
+table{{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px;}}
+th{{background:#1A1A1A;color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}}
 td{{padding:6px 10px;border-bottom:1px solid #eee;}}
 tr:last-child td{{border-bottom:none;}}
 tr:hover td{{background:#F7F7F7;}}
 .r{{text-align:right;font-family:'Courier New',monospace;}}
-.box{{background:#F7F7F7;border-left:3px solid #E60028;padding:12px 16px;margin:10px 0 14px;font-size:12.5px;line-height:1.7;}}
+.box{{background:#F7F7F7;border-left:3px solid #E60028;padding:12px 16px;margin:10px 0 14px;font-size:13.5px;line-height:1.7;}}
 .box ul{{padding-left:18px;margin:6px 0 0;}}.box li{{margin-bottom:4px;}}
-.abox{{background:#fff;border-top:2px solid #E60028;border-bottom:1px solid #eee;padding:14px 18px;margin:8px 0 18px;font-size:12.5px;line-height:1.75;}}
-.abox .ah{{font-size:9px;font-weight:700;color:#E60028;letter-spacing:2px;text-transform:uppercase;margin-bottom:9px;}}
+.abox{{background:#fff;border-top:2px solid #E60028;border-bottom:1px solid #eee;padding:14px 18px;margin:8px 0 18px;font-size:13.5px;line-height:1.75;}}
+.abox .ah{{font-size:10.5px;font-weight:700;color:#E60028;letter-spacing:2px;text-transform:uppercase;margin-bottom:9px;}}
 .abox p{{margin-bottom:8px;}}.abox p:last-child{{margin-bottom:0;}}
 .abox ul{{padding-left:18px;margin-bottom:8px;}}.abox li{{margin-bottom:4px;}}
-@media print{{body{{font-size:11px;}}.page{{margin:0;padding:20px;}}table{{break-inside:avoid;}}.abox{{break-inside:avoid;}}}}
+@media print{{body{{font-size:12px;}}.page{{margin:0;padding:20px;}}table{{break-inside:avoid;}}.abox{{break-inside:avoid;}}}}
 </style></head><body><div class="page">
 <div class="banner">
   <h1>{entity}</h1>
@@ -1175,3 +1175,4 @@ if uploaded:
 else:
     st.markdown('<div class="neutral-box">Upload a PDF above to generate the analysis report.</div>',
                 unsafe_allow_html=True)
+
