@@ -9,103 +9,230 @@ st.set_page_config(page_title="HKMA Financial Disclosure Analyser", layout="wide
 # ── CSS ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.stApp { background: #f0f2f6; }
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
 
+/* ── Societe Generale palette ──
+   Primary red   : #E60028
+   Black         : #1A1A1A
+   White         : #FFFFFF
+   Light gray bg : #F5F5F5
+   Mid gray      : #6B6B6B
+   Border gray   : #D9D9D9
+*/
+
+html, body, [class*="css"] {
+    font-family: 'Raleway', 'Arial', sans-serif;
+    color: #1A1A1A;
+}
+.stApp { background: #F5F5F5; }
+
+/* Hero bar */
 .hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    border-radius: 16px; padding: 36px 40px 28px; margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    background: #E60028;
+    border-radius: 0px;
+    padding: 32px 40px 24px;
+    margin-bottom: 28px;
+    border-bottom: 4px solid #1A1A1A;
 }
-.hero h1 { color: #fff; font-size: 2rem; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.5px; }
-.hero p  { color: rgba(255,255,255,0.65); font-size: 0.95rem; margin: 0; }
+.hero h1 {
+    color: #FFFFFF;
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.hero p { color: rgba(255,255,255,0.80); font-size: 0.9rem; margin: 0; }
 
+/* KPI cards */
 .card {
-    background: #fff; border-radius: 12px; padding: 24px 28px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px;
+    background: #FFFFFF;
+    border-radius: 0px;
+    border-top: 3px solid #E60028;
+    padding: 20px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
 }
-.card-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 1.2px;
-              text-transform: uppercase; color: #6b7280; margin-bottom: 4px; }
-.card-value { font-size: 1.6rem; font-weight: 700; color: #111827; }
-.card-sub   { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
-.badge-up   { display:inline-block; background:#dcfce7; color:#166534;
-              font-size:0.72rem; font-weight:600; padding:2px 8px; border-radius:20px; margin-left:8px; }
-.badge-dn   { display:inline-block; background:#fee2e2; color:#991b1b;
-              font-size:0.72rem; font-weight:600; padding:2px 8px; border-radius:20px; margin-left:8px; }
-.badge-nt   { display:inline-block; background:#f3f4f6; color:#374151;
-              font-size:0.72rem; font-weight:600; padding:2px 8px; border-radius:20px; margin-left:8px; }
+.card-title {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase; color: #6B6B6B; margin-bottom: 6px;
+}
+.card-value { font-size: 1.55rem; font-weight: 700; color: #1A1A1A; }
+.card-sub   { font-size: 0.78rem; color: #6B6B6B; margin-top: 3px; }
 
+/* Badges */
+.badge-up { display:inline-block; background:#E60028; color:#FFFFFF;
+            font-size:0.7rem; font-weight:700; padding:2px 8px;
+            border-radius:2px; margin-left:8px; }
+.badge-dn { display:inline-block; background:#1A1A1A; color:#FFFFFF;
+            font-size:0.7rem; font-weight:700; padding:2px 8px;
+            border-radius:2px; margin-left:8px; }
+.badge-nt { display:inline-block; background:#D9D9D9; color:#6B6B6B;
+            font-size:0.7rem; font-weight:700; padding:2px 8px;
+            border-radius:2px; margin-left:8px; }
+
+/* Section headers */
 .section-header {
-    font-size: 1.05rem; font-weight: 700; color: #111827;
-    border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin: 28px 0 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #E60028;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #E60028;
+    padding-bottom: 8px;
+    margin: 32px 0 16px;
 }
+
+/* Info / warn / analysis boxes */
 .info-box {
-    background: #eff6ff; border-left: 4px solid #3b82f6;
-    border-radius: 0 8px 8px 0; padding: 12px 16px;
-    font-size: 0.875rem; color: #1e40af; margin-bottom: 16px;
+    background: #FFFFFF;
+    border-left: 4px solid #E60028;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+    line-height: 1.6;
 }
 .warn-box {
-    background: #fffbeb; border-left: 4px solid #f59e0b;
-    border-radius: 0 8px 8px 0; padding: 12px 16px;
-    font-size: 0.875rem; color: #92400e; margin-bottom: 16px;
+    background: #FFF5F5;
+    border-left: 4px solid #E60028;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+    line-height: 1.6;
 }
 .green-box {
-    background: #f0fdf4; border-left: 4px solid #22c55e;
-    border-radius: 0 8px 8px 0; padding: 14px 18px;
-    font-size: 0.875rem; color: #14532d; margin-bottom: 16px; line-height: 1.6;
+    background: #FFFFFF;
+    border-left: 4px solid #1A1A1A;
+    padding: 14px 18px;
+    font-size: 0.875rem;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+    line-height: 1.7;
 }
 .red-box {
-    background: #fff1f2; border-left: 4px solid #ef4444;
-    border-radius: 0 8px 8px 0; padding: 14px 18px;
-    font-size: 0.875rem; color: #7f1d1d; margin-bottom: 16px; line-height: 1.6;
+    background: #FFF5F5;
+    border-left: 4px solid #E60028;
+    padding: 14px 18px;
+    font-size: 0.875rem;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+    line-height: 1.7;
 }
 .neutral-box {
-    background: #f8fafc; border-left: 4px solid #64748b;
-    border-radius: 0 8px 8px 0; padding: 14px 18px;
-    font-size: 0.875rem; color: #1e293b; margin-bottom: 16px; line-height: 1.6;
+    background: #F5F5F5;
+    border-left: 4px solid #6B6B6B;
+    padding: 14px 18px;
+    font-size: 0.875rem;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+    line-height: 1.7;
 }
-.valuation-block {
-    background: #1a1a2e; color: #e2e8f0; border-radius: 12px;
-    padding: 24px 28px; margin-bottom: 20px; font-size: 0.875rem; line-height: 1.8;
-}
-.valuation-block h3 { color: #93c5fd; font-size: 1rem; margin: 0 0 10px 0; }
-.val-step { display:flex; align-items:baseline; gap:12px; padding: 4px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.07); }
-.val-step:last-child { border-bottom: none; font-weight:700; color:#fff; }
-.val-label { flex:1; color:#94a3b8; }
-.val-num   { font-variant-numeric: tabular-nums; color:#e2e8f0; }
-.val-sign  { color:#64748b; width:16px; }
-.entity-header {
-    background: linear-gradient(135deg, #1a1a2e, #0f3460);
-    border-radius: 12px; padding: 22px 28px; margin-bottom: 20px; color: white;
-}
-.entity-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.entity-header .meta { font-size: 0.85rem; opacity: 0.7; margin-top: 4px; }
 
-table.styled { width:100%; border-collapse:collapse; font-size:0.875rem; }
+/* Valuation block */
+.valuation-block {
+    background: #FFFFFF;
+    color: #1A1A1A;
+    border-radius: 0px;
+    border-top: 3px solid #E60028;
+    border: 1px solid #D9D9D9;
+    border-top: 3px solid #E60028;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    font-size: 0.875rem;
+    line-height: 1.8;
+}
+.valuation-block h3 {
+    color: #E60028;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    margin: 0 0 14px 0;
+}
+.val-step {
+    display:flex; align-items:baseline; gap:12px;
+    padding: 5px 0;
+    border-bottom: 1px solid #D9D9D9;
+}
+.val-step:last-child { border-bottom: none; font-weight:700; color:#1A1A1A; }
+.val-label { flex:1; color:#6B6B6B; }
+.val-num   { font-variant-numeric: tabular-nums; color:#1A1A1A; }
+.val-sign  { color:#6B6B6B; width:16px; }
+
+/* Entity header */
+.entity-header {
+    background: #FFFFFF;
+    border-left: 6px solid #E60028;
+    border-top: 3px solid #E60028;
+    padding: 22px 28px;
+    margin-bottom: 20px;
+    color: #1A1A1A;
+}
+.entity-header h2 {
+    margin: 0; font-size: 1.4rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; color: #1A1A1A;
+}
+.entity-header .meta { font-size: 0.82rem; color: #6B6B6B; margin-top: 5px; }
+
+/* Tables */
+table.styled { width:100%; border-collapse:collapse; font-size:0.86rem; }
 table.styled th {
-    background:#1a1a2e; color:#fff; padding:10px 14px;
-    text-align:left; font-weight:600; font-size:0.8rem; letter-spacing:0.3px;
+    background: #E60028;
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
 }
-table.styled td { padding:9px 14px; border-bottom:1px solid #f3f4f6; color:#374151; }
-table.styled tr:last-child td { border-bottom:none; }
-table.styled tr:hover td { background:#f9fafb; }
+table.styled td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #D9D9D9;
+    color: #1A1A1A;
+    background: #FFFFFF;
+}
+table.styled tr:last-child td { border-bottom: none; }
+table.styled tr:hover td { background: #F5F5F5; }
 .num { text-align:right !important; font-variant-numeric: tabular-nums; }
-.bold-row td { font-weight:700; color:#111827 !important; background:#f9fafb; }
-.exec-section {
-    background: #fff; border-radius: 12px; padding: 28px 32px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px;
+.bold-row td {
+    font-weight: 700;
+    color: #1A1A1A !important;
+    background: #F5F5F5 !important;
+    border-left: 3px solid #E60028;
 }
-.exec-section h3 { font-size:1rem; font-weight:700; color:#1a1a2e; margin: 0 0 10px 0; }
-.exec-section p  { font-size:0.875rem; color:#374151; line-height:1.75; margin: 0 0 10px 0; }
+
+/* Executive analysis sections */
+.exec-section {
+    background: #FFFFFF;
+    border-top: 3px solid #E60028;
+    padding: 24px 28px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+.exec-section h3 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #E60028;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    margin: 0 0 12px 0;
+}
+.exec-section p {
+    font-size: 0.875rem;
+    color: #1A1A1A;
+    line-height: 1.75;
+    margin: 0 0 10px 0;
+}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="hero">
     <h1>HKMA Financial Disclosure Analyser</h1>
-    <p>Upload any HKMA Banking Disclosure PDF -- branch, locally incorporated bank, or restricted licence bank</p>
+    <p>Upload any HKMA Banking Disclosure PDF. Supports branches, locally incorporated banks, and restricted licence banks.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1167,7 +1294,7 @@ def render_report(d):
             rows_pbv = ""
             for i, (lbl, num, note) in enumerate(val["steps_pbv"]):
                 sign = "" if i == 0 else "x" if i <= 2 else ""
-                style = "font-weight:700;color:#fff;" if i >= 3 else ""
+                style = "font-weight:700;color:#E60028;" if i >= 3 else ""
                 rows_pbv += (f'<div class="val-step">'
                              f'<span class="val-label">{lbl}</span>'
                              f'<span class="val-num" style="{style}">{num}</span>'
@@ -1184,7 +1311,7 @@ def render_report(d):
         if val["ok_gordon"]:
             rows_g = ""
             for i, (lbl, num, note) in enumerate(val["steps_gordon"]):
-                style = "font-weight:700;color:#fff;" if i == len(val["steps_gordon"]) - 1 else ""
+                style = "font-weight:700;color:#E60028;" if i == len(val["steps_gordon"]) - 1 else ""
                 rows_g += (f'<div class="val-step">'
                            f'<span class="val-label">{lbl}</span>'
                            f'<span class="val-num" style="{style}">{num}</span>'
@@ -1207,7 +1334,7 @@ def render_report(d):
         for lbl, num, note in val["vir_steps"]:
             rows_vir += (f'<div class="val-step">'
                          f'<span class="val-label">{lbl}</span>'
-                         f'<span class="val-num">{num}</span>'
+                         f'<span class="val-num" style="color:#1A1A1A;">{num}</span>'
                          f'</div>')
             if note:
                 rows_vir += f'<div style="font-size:0.72rem;color:#64748b;padding:0 0 6px 0;">{note}</div>'
