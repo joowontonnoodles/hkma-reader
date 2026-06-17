@@ -16,10 +16,10 @@ st.set_page_config(page_title="HKMA Disclosure Analyser", layout="wide")
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow:wght@300;400;500;600;700&display=swap');
 *, *::before, *::after { box-sizing: border-box; }
 html, body, [class*="css"] {
-    font-family: 'Raleway', 'Arial Narrow', Arial, sans-serif !important;
+    font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif !important;
     background: #FFFFFF !important;
     color: #1A1A1A !important;
 }
@@ -727,25 +727,40 @@ def build_analysis(d, mult, ul):
 
 # ── RENDER HELPERS ─────────────────────────────────────────────────────────────
 
-BAR_COLORS = ["#E60028","#1A1A1A","#6B6B6B","#BFBFBF","#D9D9D9","#E8E8E8"]
+BAR_COLORS = ["#E60028","#C0001F","#1A1A1A","#555555","#888888","#AAAAAA","#C8C8C8","#E0E0E0"]
 
 def render_bar(items, total, title):
     if not items or not total:
         st.markdown('<div class="neutral-box">Breakdown not available for this filing.</div>', unsafe_allow_html=True)
         return
-    top  = sorted(items, key=lambda x:x["curr"], reverse=True)[:8]
-    maxv = top[0]["curr"] if top else 1
-    rows = ""
-    for i,x in enumerate(top):
-        pct = x["curr"]/total*100 if total else 0
-        w   = x["curr"]/maxv*100
-        col = BAR_COLORS[i % len(BAR_COLORS)]
-        rows += (f'<div class="bar-row">'
-                 f'<div class="bar-lrow"><span>{x["label"][:38]}</span>'
-                 f'<span style="font-weight:700;">{pct:.1f}%</span></div>'
-                 f'<div class="bar-track"><div class="bar-fill" style="width:{w:.1f}%;background:{col};"></div></div>'
-                 f'</div>')
-    st.markdown(f'<div class="bar-wrap"><div class="bar-title">{title}</div>{rows}</div>', unsafe_allow_html=True)
+    top = sorted(items, key=lambda x: x["curr"], reverse=True)[:7]
+    rest_val = sum(x["curr"] for x in items if x not in top)
+    segments = [(x["label"][:34], round(x["curr"]/total*100, 2), BAR_COLORS[i % len(BAR_COLORS)])
+                for i, x in enumerate(top)]
+    if rest_val > 0:
+        segments.append(("Other", round(rest_val/total*100, 2), "#E8E8E8"))
+    segs = "".join(
+        f'<div style="width:{pct:.2f}%;background:{col};height:100%;display:inline-block;'
+        f'vertical-align:top;box-sizing:border-box;" title="{lbl}: {pct:.1f}%"></div>'
+        for lbl, pct, col in segments
+    )
+    legend = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:5px;margin:3px 12px 3px 0;font-size:0.72rem;">'
+        f'<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:{col};flex-shrink:0;"></span>'
+        f'<span style="color:#1A1A1A;">{lbl}</span>'
+        f'<span style="font-weight:700;color:{col};">{pct:.1f}%</span></span>'
+        for lbl, pct, col in segments
+    )
+    html = (
+        '<div class="bar-wrap">'
+        f'<div class="bar-title">{title}</div>'
+        '<div style="width:100%;height:24px;border-radius:3px;overflow:hidden;'
+        'display:flex;margin-bottom:13px;border:1px solid #E8E8E8;">'
+        f'{segs}</div>'
+        f'<div style="line-height:1.9;">{legend}</div>'
+        '</div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 def conc_block(items, total, mult, ul, label):
     if not items or not total:
@@ -904,9 +919,9 @@ def build_html_report(d, ana, filename, ul, mult):
 <html lang="en"><head><meta charset="UTF-8">
 <title>{entity} -- HKMA Disclosure Analysis</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow:wght@300;400;500;600;700&display=swap');
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:'Raleway',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:13px;line-height:1.65;}}
+body{{font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:13px;line-height:1.65;}}
 .page{{max-width:900px;margin:30px auto;padding:0 24px 48px;}}
 h1{{font-size:20px;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}}
 .meta{{font-size:11px;color:#6B6B6B;margin-bottom:6px;}}
